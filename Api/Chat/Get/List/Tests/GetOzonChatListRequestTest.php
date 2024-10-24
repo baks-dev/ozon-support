@@ -19,13 +19,17 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
+ *
  */
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Message\Send\Tests;
+namespace BaksDev\Ozon\Support\Api\Chat\Get\List\Tests;
 
-use BaksDev\Ozon\Support\Api\Message\Send\SendOzonChatMessageRequest;
+use BaksDev\Ozon\Support\Api\Chat\Get\List\GetOzonChatListRequest;
+use BaksDev\Ozon\Support\Api\Chat\OzonChatDTO;
+use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -34,18 +38,43 @@ use Symfony\Component\DependencyInjection\Attribute\When;
  * @group ozon-support-api
  */
 #[When(env: 'test')]
-class SendOzonChatMessageRequestTest extends KernelTestCase
+class GetOzonChatListRequestTest extends KernelTestCase
 {
+    private static OzonAuthorizationToken $authorization;
+
+    public static function setUpBeforeClass(): void
+    {
+        self::$authorization = new OzonAuthorizationToken(
+            new UserProfileUid(),
+            $_SERVER['TEST_OZON_TOKEN'],
+            $_SERVER['TEST_OZON_CLIENT'],
+            $_SERVER['TEST_OZON_WAREHOUSE']
+        );
+    }
+
     public function testComplete(): void
     {
-        /** @var SendOzonChatMessageRequest $sendOzonChatMessage */
-        $sendOzonChatMessage = self::getContainer()->get(SendOzonChatMessageRequest::class);
+        /** @var GetOzonChatListRequest $ozonChatListRequest */
+        $ozonChatListRequest = self::getContainer()->get(GetOzonChatListRequest::class);
+        $ozonChatListRequest->TokenHttpClient(self::$authorization);
 
-        $sendOzonChatMessage
-            ->chatId('90145814-406d-4e46-8b43-d5287f9052c2')
-            ->message('bay')
-            ->send();
+        $chats = $ozonChatListRequest
+            ->getChatList();
 
-        self::assertTrue(true);
+        dd(iterator_to_array($chats));
+
+        if($chats->valid())
+        {
+            /** @var OzonChatDTO $ozonChatListDTO */
+            $ozonChatListDTO = $chats->current();
+
+            self::assertNotNull($ozonChatListDTO->getId());
+            self::assertIsString($ozonChatListDTO->getId());
+
+        }
+        else
+        {
+            self::assertFalse($chats->valid());
+        }
     }
 }

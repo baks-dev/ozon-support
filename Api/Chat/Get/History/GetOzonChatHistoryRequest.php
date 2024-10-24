@@ -23,10 +23,10 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Chat\History;
+namespace BaksDev\Ozon\Support\Api\Chat\Get\History;
 
 use BaksDev\Ozon\Api\Ozon;
-use BaksDev\Ozon\Support\Api\Message\OzonChatMessageDTO;
+use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
 use Generator;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -102,7 +102,10 @@ final class GetOzonChatHistoryRequest extends Ozon
         return $this;
     }
 
-    public function get(): Generator
+    /**
+     * @return Generator<int, OzonMessageChatDTO>
+     */
+    public function getMessages(): Generator
     {
         // обязательно для передачи
         if(false === $this->chat)
@@ -141,7 +144,7 @@ final class GetOzonChatHistoryRequest extends Ozon
 
         foreach($content['messages'] as $message)
         {
-            yield new OzonChatMessageDTO($message);
+            yield new OzonMessageChatDTO($message);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace BaksDev\Ozon\Support\Api\Message;
 
 use DateTimeImmutable;
 
-final readonly class OzonChatMessageDTO
+final readonly class OzonMessageChatDTO
 {
     /** Идентификатор сообщения. */
     private string $id;

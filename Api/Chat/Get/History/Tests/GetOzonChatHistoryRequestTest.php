@@ -23,10 +23,10 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Chat\History\Tests;
+namespace BaksDev\Ozon\Support\Api\Chat\Get\History\Tests;
 
-use BaksDev\Ozon\Support\Api\Chat\History\GetOzonChatHistoryRequest;
-use BaksDev\Ozon\Support\Api\Message\OzonChatMessageDTO;
+use BaksDev\Ozon\Support\Api\Chat\Get\History\GetOzonChatHistoryRequest;
+use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -57,24 +57,24 @@ class GetOzonChatHistoryRequestTest extends KernelTestCase
         $ozonChatHistoryRequest = self::getContainer()->get(GetOzonChatHistoryRequest::class);
         $ozonChatHistoryRequest->TokenHttpClient(self::$Authorization);
 
-        $chats = $ozonChatHistoryRequest
+        $messages = $ozonChatHistoryRequest
             ->chatId('90145814-406d-4e46-8b43-d5287f9052c2')
             ->limit(1)
-            ->get();
+            ->getMessages();
 
-        if($chats->valid())
+        dd(iterator_to_array($messages));
+
+        if($messages->valid())
         {
-            /** @var OzonChatMessageDTO $ozonChatMessageDTO */
-            $ozonChatMessageDTO = $chats->current();
-
-            dd($ozonChatMessageDTO);
+            /** @var OzonMessageChatDTO $ozonChatMessageDTO */
+            $ozonChatMessageDTO = $messages->current();
 
             self::assertNotNull($ozonChatMessageDTO->getId());
             self::assertIsString($ozonChatMessageDTO->getId());
         }
         else
         {
-            self::assertFalse($chats->valid());
+            self::assertFalse($messages->valid());
         }
 
     }

@@ -27,11 +27,17 @@ namespace BaksDev\Ozon\Support\Schedule\FindProfileForCreateOzonSupport;
 
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\AllProfileToken\AllProfileOzonTokenInterface;
-use BaksDev\Ozon\Support\Messanger\CreateOzonSupportChat\CreateOzonSupportChatMessage;
+use BaksDev\Ozon\Support\Messenger\GetOzonChatList\GetOzonChatListMessage;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+/**
+ * Инициируем получение сообщений из чатов Ozon:
+ *
+ * - получаем профили с существующим и активным токеном на Ozon
+ * - бросаем сообщение с id профиля для использования в запросах к api Ozon
+ */
 #[AsMessageHandler]
 final readonly class FindProfileForCreateOzonSupportHandler
 {
@@ -51,7 +57,7 @@ final readonly class FindProfileForCreateOzonSupportHandler
         /** Идентификаторы профилей пользователей, у которых есть активный токен Ozon */
         $profiles = $this->allOzonTokens
             ->onlyActiveToken()
-            ->findAll();
+            ->findAll(); // @TODO в запросе false или Generator?
 
         if(false === $profiles->valid())
         {
@@ -67,11 +73,9 @@ final readonly class FindProfileForCreateOzonSupportHandler
         foreach($profiles as $profile)
         {
             $this->messageDispatch->dispatch(
-                message: new CreateOzonSupportChatMessage($profile),
+                message: new GetOzonChatListMessage($profile),
                 transport: (string) $profile,
             );
         }
     }
-
-
 }

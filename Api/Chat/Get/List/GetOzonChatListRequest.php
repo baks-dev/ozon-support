@@ -23,7 +23,7 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Chat\List;
+namespace BaksDev\Ozon\Support\Api\Chat\Get\List;
 
 use BaksDev\Ozon\Api\Ozon;
 use BaksDev\Ozon\Support\Api\Chat\OzonChatDTO;
@@ -106,7 +106,7 @@ final class GetOzonChatListRequest extends Ozon
         return $this;
     }
 
-    public function get(): Generator
+    public function getChatList(): Generator
     {
 
         $response = $this->TokenHttpClient()

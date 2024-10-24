@@ -23,9 +23,8 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Messenger\SendOzonSupportMessage;
+namespace BaksDev\Ozon\Support\Messenger\MarkOzonMessageChatReading;
 
-use BaksDev\Ozon\Support\Api\Message\Send\SendOzonChatMessageRequest;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
@@ -36,17 +35,16 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
+ *
  */
 #[AsMessageHandler]
-final readonly class SendOzonSupportChatHandler
+final readonly class MarkReadingOzonMessageChatHandler
 {
     private LoggerInterface $logger;
 
     public function __construct(
         LoggerInterface $ozonSupport,
-        private SendOzonChatMessageRequest $sendMessageRequest,
         private CurrentSupportEventRepository $currentSupportEvent,
-
     )
     {
         $this->logger = $ozonSupport;
@@ -54,7 +52,6 @@ final readonly class SendOzonSupportChatHandler
 
     public function __invoke(SupportMessage $message): void
     {
-
         $chat = new SupportDTO();
 
         $supportEvent = $this->currentSupportEvent
@@ -63,50 +60,25 @@ final readonly class SendOzonSupportChatHandler
 
         $supportEvent->getDto($chat);
 
-        if($chat->getStatus()->getSupportStatus() instanceof SupportStatusClose)
-        {
+        /** @var SupportMessageDTO $lastMessage */
+        $lastMessage = $chat->getMessages()->last();
 
-            /** @var SupportMessageDTO $lastMessage */
-            $lastMessage = $chat->getMessages()->last();
-
-            //        $this->sendMessageRequest
-            //            ->chatId($chat->getInvariable()->getTicket())
-            //            ->message($lastMessage->getMessage());
-
-
-            /** DEBUG */
-
-            $this->logger->critical(
-                'json - '. 'chat_id: ' . $chat->getInvariable()->getTicket(). ' | text: ' . $lastMessage->getMessage(),
-                [__FILE__.':'.__LINE__],
-            );
-
-            $json = [
-                "json" => [
-                    'chat_id' => $chat->getInvariable()->getTicket(),
-                    'text' => $lastMessage->getMessage(),
-                ]
-            ];
-            dump($json);
-
-            /** DEBUG */
-        }
-
-        /** DEBUG */
+        // статус чата открыт - при создании чата или добавлении нового сообщения в чат
         if($chat->getStatus()->getSupportStatus() instanceof SupportStatusOpen)
         {
-
-            $this->logger->debug(
-                'log',
-                [__FILE__.':'.__LINE__],
-            );
-
-            dump('---без ответа---');
+            dump('-----MarkReadingOzonMessageChatHandler------');
         }
-        /** DEBUG */
 
-        dump('-----SendOzonSupportChatHandler------');
+        if($chat->getStatus()->getSupportStatus() instanceof SupportStatusClose)
+        {
+            dump('-----MarkReadingOzonMessageChatHandler------');
 
+            // отправляем запрос на прочтение
+            // @TODO для прода
+            //            $this->readingOzonMessageChatRequest
+            //                ->chatId($chat->getInvariable()->getTicket())
+            //                ->fromMessage($lastMessage->get);
+        }
     }
 }
 

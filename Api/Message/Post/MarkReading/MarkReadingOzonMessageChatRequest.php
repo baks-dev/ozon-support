@@ -23,22 +23,29 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Message\Send;
+namespace BaksDev\Ozon\Support\Api\Message\Post\MarkReading;
 
 use BaksDev\Ozon\Api\Ozon;
-use DomainException;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
- * Отправляет сообщение в существующий чат по его идентификатору.
- * @see https://docs.ozon.ru/api/seller/#tag/ChatAPI
+ * Метод для отметки выбранного сообщения и сообщений до него прочитанными.
  */
-final class SendOzonChatMessageRequest extends Ozon
+#[Autoconfigure(public: true)]
+final class MarkReadingOzonMessageChatRequest extends Ozon
 {
     /** Идентификатор чата */
     private string|false $chatId = false;
 
-    /** Текст сообщения в формате plain text от 1 до 1000 символов */
-    private string|false $message = false;
+    /** Идентификатор сообщения. */
+    private int|null $fromMessage = null;
+
+    public function fromMessage(int $messageId): self
+    {
+        $this->fromMessage = $messageId;
+
+        return $this;
+    }
 
     public function chatId(string $chat): self
     {
@@ -47,15 +54,12 @@ final class SendOzonChatMessageRequest extends Ozon
         return $this;
     }
 
-    public function message(string $message): self
-    {
-        $this->message = $message;
-
-        return $this;
-    }
-
-    /** Отправить сообщение */
-    public function send(): bool
+    /**
+     * Отметить выбранное сообщения и сообщений ДО НЕГО прочитанными
+     *
+     * @see https://docs.ozon.ru/api/seller/#tag/ChatAPI
+     */
+    public function postReading(): bool
     {
         /**
          * Выполнять операции запроса ТОЛЬКО в PROD окружении
@@ -72,19 +76,19 @@ final class SendOzonChatMessageRequest extends Ozon
         }
 
         // обязательно для передачи
-        if(false === $this->message)
+        if(false === $this->fromMessage)
         {
-            throw new \InvalidArgumentException('Invalid argument exception text');
+            throw new \InvalidArgumentException('Invalid argument exception messageId');
         }
 
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',
-                '/v1/chat/send/message',
+                'v2/chat/read',
                 [
                     "json" => [
                         'chat_id' => $this->chatId,
-                        'text' => $this->message,
+                        'from_message_id' => $this->fromMessage,
                     ]
                 ]
             );
@@ -93,13 +97,7 @@ final class SendOzonChatMessageRequest extends Ozon
 
         if($response->getStatusCode() !== 200)
         {
-
             $this->logger->critical($content['code'].': '.$content['message'], [self::class.':'.__LINE__]);
-
-            throw new DomainException(
-                message: 'Ошибка '.self::class,
-                code: $response->getStatusCode()
-            );
         }
 
         return true;

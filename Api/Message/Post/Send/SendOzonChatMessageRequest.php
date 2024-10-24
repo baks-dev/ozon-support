@@ -23,48 +23,70 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\File\Send;
+namespace BaksDev\Ozon\Support\Api\Message\Post\Send;
 
 use BaksDev\Ozon\Api\Ozon;
 use DomainException;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
- * Отправляет файл в существующий чат по его идентификатору.
- * @see https://docs.ozon.ru/api/seller/#operation/ChatAPI_ChatSendFile
+ * Отправляет сообщение в существующий чат по его идентификатору.
+ * @see https://docs.ozon.ru/api/seller/#tag/ChatAPI
  */
-final class OzonSendFileRequest extends Ozon
+#[Autoconfigure(public: true)]
+final class SendOzonChatMessageRequest extends Ozon
 {
+    /** Идентификатор чата */
+    private string|false $chatId = false;
 
-    /**
-     * id - Идентификатор чата
-     * content - Файл в виде строки base64.
-     * name - Название файла с расширением.
-     */
-    public function send(string $id, string $content, string $name): bool
+    /** Текст сообщения в формате plain text от 1 до 1000 символов */
+    private string|false $message = false;
+
+    public function chatId(string $chat): self
     {
+        $this->chatId = $chat;
 
+        return $this;
+    }
+
+    public function message(string $message): self
+    {
+        $this->message = $message;
+
+        return $this;
+    }
+
+    /** Отправить сообщение */
+    public function postMessage(): bool
+    {
         /**
          * Выполнять операции запроса ТОЛЬКО в PROD окружении
          */
         if($this->isExecuteEnvironment() === false)
         {
-            return true;
+            return false;
+        }
+
+        // обязательно для передачи
+        if(false === $this->chatId)
+        {
+            throw new \InvalidArgumentException('Invalid argument exception chat');
+        }
+
+        // обязательно для передачи
+        if(false === $this->message)
+        {
+            throw new \InvalidArgumentException('Invalid argument exception text');
         }
 
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',
-                '/v1/chat/send/file',
+                '/v1/chat/send/message',
                 [
                     "json" => [
-                        /** Файл в виде строки base64. */
-                        'base64_content' => $content,
-
-                        /** Идентификатор чата */
-                        'chat_id' => $id,
-
-                        /** Название файла с расширением. */
-                        'name' => $name
+                        'chat_id' => $this->chatId,
+                        'text' => $this->message,
                     ]
                 ]
             );
@@ -75,7 +97,6 @@ final class OzonSendFileRequest extends Ozon
         {
 
             $this->logger->critical($content['code'].': '.$content['message'], [self::class.':'.__LINE__]);
-
 
             throw new DomainException(
                 message: 'Ошибка '.self::class,

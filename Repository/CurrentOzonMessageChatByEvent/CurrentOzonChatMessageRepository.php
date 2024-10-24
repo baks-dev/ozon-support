@@ -21,40 +21,48 @@
  *  THE SOFTWARE.
  */
 
-declare(strict_types=1);
-
-namespace BaksDev\Ozon\Support\Repository\OneSupportByOzonChat;
+namespace BaksDev\Ozon\Support\Repository\CurrentOzonMessageChatByEvent;
 
 use BaksDev\Core\Doctrine\ORMQueryBuilder;
 use BaksDev\Support\Entity\Event\SupportEvent;
-use BaksDev\Support\Entity\Invariable\SupportInvariable;
-use BaksDev\Support\Entity\Support;
-use Doctrine\DBAL\Types\Types;
-use Doctrine\ORM\Query\Expr\Join;
+use BaksDev\Support\Type\Event\SupportEventUid;
 
-final readonly class OneSupportByOzonChatRepository
+final class CurrentOzonChatMessageRepository
 {
-    public function __construct(private ORMQueryBuilder $ORMQueryBuilder) {}
+    private SupportEventUid|false $event;
 
-    /**
-     * Метод возвращает текущее событие чата по идентификатору чата (тикета) из Ozon
-     */
-    public function find(string $ticket): SupportEvent|false
+    public function __construct(
+        private ORMQueryBuilder $ORMQueryBuilder,
+    ) {}
+
+    /** Устанавливает идентификатор события */
+    public function profile(SupportEvent|SupportEventUid|string $event): self
+    {
+        if($event instanceof SupportEvent)
+        {
+            $event = $event->getId();
+        }
+
+        if(is_string($event))
+        {
+            $event = new SupportEventUid($event);
+        }
+
+        $this->event = $event;
+
+        return $this;
+    }
+
+    /** Найти событие по его идентификатору */
+    public function find(): SupportEvent|false
     {
         $orm = $this->ORMQueryBuilder->createQueryBuilder(self::class);
 
         $orm
             ->select('event')
             ->from(SupportEvent::class, 'event')
-            ->join(Support::class,
-                'support',
-                Join::WITH,
-                'support.event = event.id')
-            ->join(SupportInvariable::class,
-                'invariable',
-                Join::WITH,
-                'invariable.event = support.event AND invariable.ticket = :ticket')
-            ->setParameter('ticket', $ticket, Types::STRING);
+            ->where('event.id = :event')
+            ->setParameter('event', $this->event, SupportEventUid::TYPE);
 
         return $orm->getOneOrNullResult() ?? false;
     }

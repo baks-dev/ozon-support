@@ -21,48 +21,40 @@
  *  THE SOFTWARE.
  */
 
-namespace BaksDev\Ozon\Support\Repository\CurrentOzonChatMessageByEvent;
+declare(strict_types=1);
+
+namespace BaksDev\Ozon\Support\Repository\CurrentSupportByOzonChat;
 
 use BaksDev\Core\Doctrine\ORMQueryBuilder;
 use BaksDev\Support\Entity\Event\SupportEvent;
-use BaksDev\Support\Type\Event\SupportEventUid;
+use BaksDev\Support\Entity\Invariable\SupportInvariable;
+use BaksDev\Support\Entity\Support;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Query\Expr\Join;
 
-final class CurrentOzonChatMessageRepository
+final readonly class CurrentSupportByOzonChatRepository
 {
-    private SupportEventUid|false $event;
+    public function __construct(private ORMQueryBuilder $ORMQueryBuilder) {}
 
-    public function __construct(
-        private ORMQueryBuilder $ORMQueryBuilder,
-    ) {}
-
-    /** Устанавливает идентификатор события */
-    public function profile(SupportEvent|SupportEventUid|string $event): self
-    {
-        if($event instanceof SupportEvent)
-        {
-            $event = $event->getId();
-        }
-
-        if(is_string($event))
-        {
-            $event = new SupportEventUid($event);
-        }
-
-        $this->event = $event;
-
-        return $this;
-    }
-
-    /** Найти событие по его идентификатору */
-    public function find(): SupportEvent|false
+    /**
+     * Метод возвращает текущее событие чата по идентификатору чата (тикета) из Ozon
+     */
+    public function find(string $ticket): SupportEvent|false
     {
         $orm = $this->ORMQueryBuilder->createQueryBuilder(self::class);
 
         $orm
             ->select('event')
             ->from(SupportEvent::class, 'event')
-            ->where('event.id = :event')
-            ->setParameter('event', $this->event, SupportEventUid::TYPE);
+            ->join(Support::class,
+                'support',
+                Join::WITH,
+                'support.event = event.id')
+            ->join(SupportInvariable::class,
+                'invariable',
+                Join::WITH,
+                'invariable.event = support.event AND invariable.ticket = :ticket')
+            ->setParameter('ticket', $ticket, Types::STRING);
 
         return $orm->getOneOrNullResult() ?? false;
     }
