@@ -1,0 +1,26 @@
+ozon:
+
+  support:
+
+    name: 'Ozon Support'
+    desc: 'Ozon Support profile type '
+
+    section:
+
+      contact:
+        name: 'Contact Information'
+        desc: 'Data for communication between store managers and customers.'
+
+        field:
+
+          name:
+            name: 'Contact person'
+            desc: 'User name'
+
+          phone:
+            name: 'Contact number'
+            desc: 'Contact number for communication'
+
+          email:
+            name: 'Contact Email'
+            desc: 'Contact Email'
