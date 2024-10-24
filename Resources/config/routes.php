@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2023.  Baks.dev <admin@baks.dev>
+ *  Copyright 2024.  Baks.dev <admin@baks.dev>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -19,17 +19,22 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
+ *
  */
 
-declare(strict_types=1);
+use BaksDev\Ozon\Support\BaksDevOzonSupportBundle;
+use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
-namespace BaksDev\Ozon\Support;
+return function(RoutingConfigurator $routes) {
 
-use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+    $MODULE = BaksDevOzonSupportBundle::PATH;
 
-class BaksDevOzonSupportBundle extends AbstractBundle
-{
-    public const string NAMESPACE = __NAMESPACE__.'\\';
-
-    public const string PATH = __DIR__.DIRECTORY_SEPARATOR;
-}
+    $routes->import(
+        $MODULE.'Controller',
+        'attribute',
+        false,
+        $MODULE.implode(DIRECTORY_SEPARATOR, ['Controller', '**', '*Test.php']),
+    )
+        ->prefix(\BaksDev\Core\Type\Locale\Locale::routes())
+        ->namePrefix('ozon-support:');
+};

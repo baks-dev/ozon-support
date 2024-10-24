@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2023.  Baks.dev <admin@baks.dev>
+ *  Copyright 2024.  Baks.dev <admin@baks.dev>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -19,17 +19,39 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
+ *
  */
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support;
+namespace BaksDev\Ozon\Support\Api\Get\ChatFile;
 
-use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+use BaksDev\Ozon\Api\Ozon;
 
-class BaksDevOzonSupportBundle extends AbstractBundle
+final class GetOzonFileChatRequest extends Ozon
 {
-    public const string NAMESPACE = __NAMESPACE__.'\\';
 
-    public const string PATH = __DIR__.DIRECTORY_SEPARATOR;
+    public function get(string $file): string|false
+    {
+        $url = '/v2/chat/file/messenger-rotated-2/'.$file;
+
+        $response = $this->TokenHttpClient()
+            ->request(
+                method: 'GET',
+                url: $url,
+            );
+
+        if($responseCode = $response->getStatusCode() !== 200)
+        {
+            $error = $response->getContent(false);
+
+            $this->logger->critical(
+                sprintf('Ошибка получения контента, прикрепленного пользователем от Ozon Seller API (Response Code: %s, INFO: %s, FILENAME: %s)', (string) $responseCode, $error, $file),
+                [__FILE__.':'.__LINE__]);
+
+            return false;
+        }
+
+        return $response->getContent();
+    }
 }

@@ -11,6 +11,12 @@
 $ composer require baks-dev/ozon-support
 ```
 
+Для работы с модулем добавьте тип профиля Ozon Support, запустив команду:
+
+``` bash
+$ php bin/console baks:users-profile-type:ozon-support
+```
+
 Тесты
 
 ``` bash
