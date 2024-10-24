@@ -19,14 +19,14 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
+ *
  */
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Message\History\Tests;
+namespace BaksDev\Ozon\Support\Api\Chat\List\Tests;
 
-use BaksDev\Ozon\Support\Api\Message\History\OzonChatHistoryDTO;
-use BaksDev\Ozon\Support\Api\Message\History\OzonChatHistoryRequest;
+use BaksDev\Ozon\Support\Api\Chat\List\GetOzonChatListRequest;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -37,13 +37,13 @@ use Symfony\Component\DependencyInjection\Attribute\When;
  * @group ozon-support-api
  */
 #[When(env: 'test')]
-class OzonChatHistoryRequestTest extends KernelTestCase
+class GetOzonChatListRequestTest extends KernelTestCase
 {
-    private static OzonAuthorizationToken $Authorization;
+    private static OzonAuthorizationToken $authorization;
 
     public static function setUpBeforeClass(): void
     {
-        self::$Authorization = new OzonAuthorizationToken(
+        self::$authorization = new OzonAuthorizationToken(
             new UserProfileUid(),
             $_SERVER['TEST_OZON_TOKEN'],
             $_SERVER['TEST_OZON_CLIENT'],
@@ -53,22 +53,23 @@ class OzonChatHistoryRequestTest extends KernelTestCase
 
     public function testComplete(): void
     {
-        /** @var OzonChatHistoryRequest $OzonChatHistoryRequest */
-        $OzonChatHistoryRequest = self::getContainer()->get(OzonChatHistoryRequest::class);
-        $OzonChatHistoryRequest->TokenHttpClient(self::$Authorization);
+        /** @var GetOzonChatListRequest $ozonChatListRequest */
+        $ozonChatListRequest = self::getContainer()->get(GetOzonChatListRequest::class);
+        $ozonChatListRequest->TokenHttpClient(self::$authorization);
 
+        $chats = $ozonChatListRequest
+            ->get();
 
-        $chats = $OzonChatHistoryRequest->findAll();
-
-        //                dd(iterator_to_array($chats));
+        dd(iterator_to_array($chats));
 
         if($chats->valid())
         {
-            /** @var OzonChatHistoryDTO $OzonChatHistoryDTO */
-            $OzonChatHistoryDTO = $chats->current();
+            /** @var OzonChatDTO $ozonChatListDTO */
+            $ozonChatListDTO = $chats->current();
 
-            self::assertNotNull($OzonChatHistoryDTO->getId());
-            self::assertIsString($OzonChatHistoryDTO->getId());
+            self::assertNotNull($ozonChatListDTO->getId());
+            self::assertIsString($ozonChatListDTO->getId());
+
         }
         else
         {

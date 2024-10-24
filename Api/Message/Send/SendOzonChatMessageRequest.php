@@ -32,21 +32,49 @@ use DomainException;
  * Отправляет сообщение в существующий чат по его идентификатору.
  * @see https://docs.ozon.ru/api/seller/#tag/ChatAPI
  */
-final class OzonSendMessageRequest extends Ozon
+final class SendOzonChatMessageRequest extends Ozon
 {
+    /** Идентификатор чата */
+    private string|false $chatId = false;
 
-    /**
-     * id - Идентификатор чата
-     * message - Текст сообщения в формате plain text от 1 до 1000 символов.
-     */
-    public function send(string $id, ?string $message): bool
+    /** Текст сообщения в формате plain text от 1 до 1000 символов */
+    private string|false $message = false;
+
+    public function chatId(string $chat): self
+    {
+        $this->chatId = $chat;
+
+        return $this;
+    }
+
+    public function message(string $message): self
+    {
+        $this->message = $message;
+
+        return $this;
+    }
+
+    /** Отправить сообщение */
+    public function send(): bool
     {
         /**
          * Выполнять операции запроса ТОЛЬКО в PROD окружении
          */
         if($this->isExecuteEnvironment() === false)
         {
-            return true;
+            return false;
+        }
+
+        // обязательно для передачи
+        if(false === $this->chatId)
+        {
+            throw new \InvalidArgumentException('Invalid argument exception chat');
+        }
+
+        // обязательно для передачи
+        if(false === $this->message)
+        {
+            throw new \InvalidArgumentException('Invalid argument exception text');
         }
 
         $response = $this->TokenHttpClient()
@@ -55,8 +83,8 @@ final class OzonSendMessageRequest extends Ozon
                 '/v1/chat/send/message',
                 [
                     "json" => [
-                        'chat_id' => $id,
-                        'text' => $message ?? ''
+                        'chat_id' => $this->chatId,
+                        'text' => $this->message,
                     ]
                 ]
             );
@@ -67,7 +95,6 @@ final class OzonSendMessageRequest extends Ozon
         {
 
             $this->logger->critical($content['code'].': '.$content['message'], [self::class.':'.__LINE__]);
-
 
             throw new DomainException(
                 message: 'Ошибка '.self::class,

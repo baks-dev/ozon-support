@@ -23,10 +23,10 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Message\Inbox\Tests;
+namespace BaksDev\Ozon\Support\Api\Chat\History\Tests;
 
-use BaksDev\Ozon\Support\Api\Message\Inbox\OzonChatListDTO;
-use BaksDev\Ozon\Support\Api\Message\Inbox\OzonChatListRequest;
+use BaksDev\Ozon\Support\Api\Chat\History\GetOzonChatHistoryRequest;
+use BaksDev\Ozon\Support\Api\Message\OzonChatMessageDTO;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -37,7 +37,7 @@ use Symfony\Component\DependencyInjection\Attribute\When;
  * @group ozon-support-api
  */
 #[When(env: 'test')]
-class OzonChatListRequestTest extends KernelTestCase
+class GetOzonChatHistoryRequestTest extends KernelTestCase
 {
     private static OzonAuthorizationToken $Authorization;
 
@@ -51,26 +51,26 @@ class OzonChatListRequestTest extends KernelTestCase
         );
     }
 
-    public function testComplete(): void
+    public function testRequest(): void
     {
-        /** @var OzonChatListRequest $OzonChatListRequest */
-        $OzonChatListRequest = self::getContainer()->get(OzonChatListRequest::class);
-        $OzonChatListRequest->TokenHttpClient(self::$Authorization);
+        /** @var GetOzonChatHistoryRequest $ozonChatHistoryRequest */
+        $ozonChatHistoryRequest = self::getContainer()->get(GetOzonChatHistoryRequest::class);
+        $ozonChatHistoryRequest->TokenHttpClient(self::$Authorization);
 
-
-        $chats = $OzonChatListRequest->findAll(false, false);
-
-        //                dd(iterator_to_array($chats));
+        $chats = $ozonChatHistoryRequest
+            ->chatId('90145814-406d-4e46-8b43-d5287f9052c2')
+            ->limit(1)
+            ->get();
 
         if($chats->valid())
         {
-            /** @var OzonChatListDTO $OzonChatListDTO */
-            $OzonChatListDTO = $chats->current();
+            /** @var OzonChatMessageDTO $ozonChatMessageDTO */
+            $ozonChatMessageDTO = $chats->current();
 
-            self::assertNotNull($OzonChatListDTO->getId());
-            self::assertIsString($OzonChatListDTO->getId());
+            dd($ozonChatMessageDTO);
 
-
+            self::assertNotNull($ozonChatMessageDTO->getId());
+            self::assertIsString($ozonChatMessageDTO->getId());
         }
         else
         {

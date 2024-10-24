@@ -19,20 +19,25 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
+ *
  */
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Message\Inbox;
+namespace BaksDev\Ozon\Support\Api\Chat;
 
 use DateTimeImmutable;
 
-final readonly class OzonChatListDTO
+final readonly class OzonChatDTO
 {
-    /** Идентификатор чата */
+    /**
+     * Идентификатор чата
+     */
     private string $id;
 
-    /** Статус чата:
+    /**
+     * Статус чата:
+     *
      * All — все чаты.
      * Opened — открытые чаты.
      * Closed — закрытые чаты.
@@ -41,23 +46,31 @@ final readonly class OzonChatListDTO
 
     /**
      * Тип чата
+     *
      * Seller_Support — чат с поддержкой.
      * Buyer_Seller — чат с покупателем.
      */
     private ?string $type;
 
-    /** Дата создания чата */
+    /**
+     * Дата создания чата
+     */
     private ?DateTimeImmutable $created;
 
-    /** Идентификатор первого непрочитанного сообщения в чате. */
-    private ?int $unreadId;
+    /**
+     * Идентификатор первого непрочитанного сообщения в чате.
+     */
+    private ?int $unreadMessage;
 
-    /** Идентификатор последнего сообщения в чате. */
-    private ?int $messageId;
+    /**
+     * Количество непрочитанных сообщений в чате.
+     */
+    private ?int $unreadMessageCount;
 
-    /** Количество непрочитанных сообщений в чате. */
-    private ?int $unreadCount;
-
+    /**
+     * Идентификатор последнего сообщения в чате.
+     */
+    private ?int $lastMessage;
 
     public function __construct(array $data)
     {
@@ -65,9 +78,9 @@ final readonly class OzonChatListDTO
         $this->status = $data['chat_status'];
         $this->type = $data['chat_type'];
         $this->created = new DateTimeImmutable($data['created_at']);
-        $this->unreadId = $data['first_unread_message_id'];
-        $this->messageId = $data['last_message_id'];
-        $this->unreadCount = $data['unread_count'];
+        $this->unreadMessage = $data['first_unread_message_id'];
+        $this->unreadMessageCount = $data['unread_count'];
+        $this->lastMessage = $data['last_message_id'];
     }
 
     public function getId(): string
@@ -90,19 +103,18 @@ final readonly class OzonChatListDTO
         return $this->created;
     }
 
-    public function getUnreadId(): ?int
+    public function getUnreadMessage(): ?int
     {
-        return $this->unreadId;
+        return $this->unreadMessage;
     }
 
-    public function getMessageId(): ?int
+    public function getLastMessage(): ?int
     {
-        return $this->messageId;
+        return $this->lastMessage;
     }
 
-    public function getUnreadCount(): ?int
+    public function getUnreadMessageCount(): ?int
     {
-        return $this->unreadCount;
+        return $this->unreadMessageCount;
     }
-
 }

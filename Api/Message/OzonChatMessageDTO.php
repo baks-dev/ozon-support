@@ -19,21 +19,22 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
+ *
  */
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Message\History;
+namespace BaksDev\Ozon\Support\Api\Message;
 
 use DateTimeImmutable;
 
-final readonly class OzonChatHistoryDTO
+final readonly class OzonChatMessageDTO
 {
     /** Идентификатор сообщения. */
-    private int $id;
+    private string $id;
 
     /** Идентификатор участника чата. */
-    private string $userId;
+    private string $user;
 
     /**
      * Тип участника чата:
@@ -44,56 +45,60 @@ final readonly class OzonChatHistoryDTO
      * courier — курьер,
      * support — поддержка.
      */
-    private string $type;
+    private string $userType;
 
     /** Дата создания сообщения */
     private ?DateTimeImmutable $created;
 
-    /** Признак, что сообщение прочитано. */
+    /** Прочитано ли сообщение. */
     private bool $read;
 
     /** Массив с содержимым сообщения в формате Markdown.  */
     private array $data;
 
-
     public function __construct(array $data)
     {
-        $this->id = $data['message_id'];
-        $this->userId = $data['user']['id'];
-        $this->type = $data['user']['type'];
+        $this->id = (string) $data['message_id'];
+        $this->user = $data['user']['id'];
+        $this->userType = $data['user']['type'];
         $this->created = new DateTimeImmutable($data['created_at']);
         $this->read = $data['is_read'];
         $this->data = $data['data'];
     }
 
-    public function getId(): int
+    /** Идентификатор сообщения. */
+    public function getId(): string
     {
         return $this->id;
     }
 
-    public function getUserId(): string
+    /** Идентификатор участника чата. */
+    public function getUser(): string
     {
-        return $this->userId;
+        return $this->user;
     }
 
-    public function getType(): string
+    /** Тип участника чата */
+    public function getUserType(): string
     {
-        return $this->type;
+        return $this->userType;
     }
 
+    /** Дата создания сообщения */
     public function getCreated(): ?DateTimeImmutable
     {
         return $this->created;
     }
 
+    /** Прочитано ли сообщение. */
     public function isRead(): bool
     {
         return $this->read;
     }
 
+    /** Массив с содержимым сообщения в формате Markdown.  */
     public function getData(): array
     {
         return $this->data;
     }
-
 }

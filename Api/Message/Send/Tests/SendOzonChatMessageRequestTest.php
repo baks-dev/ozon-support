@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Api\Message\Send\Tests;
 
-use BaksDev\Ozon\Support\Api\Message\Send\OzonSendMessageRequest;
+use BaksDev\Ozon\Support\Api\Message\Send\SendOzonChatMessageRequest;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -34,16 +34,18 @@ use Symfony\Component\DependencyInjection\Attribute\When;
  * @group ozon-support-api
  */
 #[When(env: 'test')]
-class OzonSendMessageRequestTest extends KernelTestCase
+class SendOzonChatMessageRequestTest extends KernelTestCase
 {
     public function testComplete(): void
     {
+        /** @var SendOzonChatMessageRequest $sendOzonChatMessage */
+        $sendOzonChatMessage = self::getContainer()->get(SendOzonChatMessageRequest::class);
 
-        /** @var OzonSendMessageRequest $OzonSendMessageRequest */
-        $OzonSendMessageRequest = self::getContainer()->get(OzonSendMessageRequest::class);
-
+        $sendOzonChatMessage
+            ->chatId('90145814-406d-4e46-8b43-d5287f9052c2')
+            ->message('bay')
+            ->send();
 
         self::assertTrue(true);
     }
-
 }
