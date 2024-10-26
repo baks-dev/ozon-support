@@ -27,7 +27,7 @@ namespace BaksDev\Ozon\Support\Schedule\FindProfileForCreateOzonSupport;
 
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\AllProfileToken\AllProfileOzonTokenInterface;
-use BaksDev\Ozon\Support\Messenger\GetOzonChatList\GetOzonChatListMessage;
+use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList\GetOzonChatListMessage;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -57,7 +57,7 @@ final readonly class FindProfileForCreateOzonSupportHandler
         /** Идентификаторы профилей пользователей, у которых есть активный токен Ozon */
         $profiles = $this->allOzonTokens
             ->onlyActiveToken()
-            ->findAll(); // @TODO в запросе false или Generator?
+            ->findAll();
 
         if(false === $profiles->valid())
         {

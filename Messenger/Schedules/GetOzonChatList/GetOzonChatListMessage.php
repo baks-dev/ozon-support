@@ -24,24 +24,19 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Messenger\GetOzonCustomerMessageChat;
+namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList;
 
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 
-final class GetOzonCustomerMessageChatMessage
+final class GetOzonChatListMessage
 {
-
-    /**
-     * Идентификатор чата на Ozon
-     */
-    private string $chatId;
 
     /**
      * Идентификатор профиля пользователя
      */
     private UserProfileUid $profile;
 
-    public function __construct(string $chatId, UserProfileUid|string $profile)
+    public function __construct(UserProfileUid|string $profile)
     {
         if(is_string($profile))
         {
@@ -49,13 +44,6 @@ final class GetOzonCustomerMessageChatMessage
         }
 
         $this->profile = $profile;
-
-        $this->chatId = $chatId;
-    }
-
-    public function getChatId(): string
-    {
-        return $this->chatId;
     }
 
     public function getProfile(): UserProfileUid

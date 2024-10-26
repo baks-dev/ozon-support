@@ -36,15 +36,7 @@ final readonly class OzonMessageChatDTO
     /** Идентификатор участника чата. */
     private string $user;
 
-    /**
-     * Тип участника чата:
-     *
-     * customer — покупатель,
-     * seller — продавец,
-     * crm — системные сообщения,
-     * courier — курьер,
-     * support — поддержка.
-     */
+    /** Тип участника чата */
     private string $userType;
 
     /** Дата создания сообщения */
@@ -78,7 +70,15 @@ final readonly class OzonMessageChatDTO
         return $this->user;
     }
 
-    /** Тип участника чата */
+    /**
+     * Тип участника чата:
+     *
+     * customer — покупатель,
+     * seller — продавец,
+     * crm — системные сообщения,
+     * courier — курьер,
+     * support — поддержка.
+     */
     public function getUserType(): string
     {
         return $this->userType;

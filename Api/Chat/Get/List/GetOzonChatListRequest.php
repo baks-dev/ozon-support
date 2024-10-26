@@ -28,13 +28,10 @@ namespace BaksDev\Ozon\Support\Api\Chat\Get\List;
 use BaksDev\Ozon\Api\Ozon;
 use BaksDev\Ozon\Support\Api\Chat\OzonChatDTO;
 use Generator;
-use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * Возвращает информацию о чатах по указанным фильтрам.
- * @see https://docs.ozon.ru/api/seller/#operation/ChatAPI_ChatListV2
  */
-#[Autoconfigure(public: true)]
 final class GetOzonChatListRequest extends Ozon
 {
     /**
@@ -106,9 +103,14 @@ final class GetOzonChatListRequest extends Ozon
         return $this;
     }
 
-    public function getChatList(): Generator
+    /**
+     * Список чатов
+     * @see https://docs.ozon.ru/api/seller/#operation/ChatAPI_ChatListV2
+     *
+     * @return Generator<int, OzonChatDTO>
+     */
+    public function getListChats(): false|Generator
     {
-
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',
@@ -125,14 +127,18 @@ final class GetOzonChatListRequest extends Ozon
                 ]
             );
 
-        $content = $response->toArray(false);
-
-        if($response->getStatusCode() !== 200)
+        if($responseCode = $response->getStatusCode() !== 200)
         {
+            $error = $response->getContent(false);
+
             $this->logger->critical(
-                sprintf('Ошибка получения списка чатов (код ошибки %s, сообщение %s)', $content['code'], $content['message']),
+                sprintf('Ошибка получения списка чатов (Response Code: %s, INFO: %s)', (string) $responseCode, $error),
                 [__FILE__.':'.__LINE__]);
+
+            return false;
         }
+
+        $content = $response->toArray(false);
 
         foreach($content['chats'] as $chat)
         {

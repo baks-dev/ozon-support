@@ -59,7 +59,7 @@ class GetOzonChatListRequestTest extends KernelTestCase
         $ozonChatListRequest->TokenHttpClient(self::$authorization);
 
         $chats = $ozonChatListRequest
-            ->getChatList();
+            ->getListChats();
 
         dd(iterator_to_array($chats));
 

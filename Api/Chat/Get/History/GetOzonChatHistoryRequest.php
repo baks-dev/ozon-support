@@ -28,14 +28,10 @@ namespace BaksDev\Ozon\Support\Api\Chat\Get\History;
 use BaksDev\Ozon\Api\Ozon;
 use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
 use Generator;
-use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * Возвращает историю сообщений чата.
- *
- * @see https://docs.ozon.ru/api/seller/#operation/ChatAPI_ChatHistoryV2
  */
-#[Autoconfigure(public: true)]
 final class GetOzonChatHistoryRequest extends Ozon
 {
     /**
@@ -103,9 +99,12 @@ final class GetOzonChatHistoryRequest extends Ozon
     }
 
     /**
+     * Список сообщений чата
+     * @see https://docs.ozon.ru/api/seller/#operation/ChatAPI_ChatHistoryV2
+     *
      * @return Generator<int, OzonMessageChatDTO>
      */
-    public function getMessages(): Generator
+    public function getMessages(): Generator|false
     {
         // обязательно для передачи
         if(false === $this->chat)
@@ -127,20 +126,18 @@ final class GetOzonChatHistoryRequest extends Ozon
                 ]
             );
 
-        /**
-         * @var array{
-         *     'has_next': bool,
-         *     'messages': array
-         * } $content
-         */
-        $content = $response->toArray(false);
-
-        if($response->getStatusCode() !== 200)
+        if($responseCode = $response->getStatusCode() !== 200)
         {
+            $error = $response->getContent(false);
+
             $this->logger->critical(
-                sprintf('Ошибка получения истории чата (код ошибки %s, сообщение %s)', $content['code'], $content['message']),
+                sprintf('Ошибка получения истории чата (Response Code: %s, INFO: %s)', (string) $responseCode, $error),
                 [__FILE__.':'.__LINE__]);
+
+            return false;
         }
+
+        $content = $response->toArray(false);
 
         foreach($content['messages'] as $message)
         {

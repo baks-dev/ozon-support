@@ -1,17 +1,17 @@
 <?php
 /*
  *  Copyright 2024.  Baks.dev <admin@baks.dev>
- *  
+ *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
  *  in the Software without restriction, including without limitation the rights
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is furnished
  *  to do so, subject to the following conditions:
- *  
+ *
  *  The above copyright notice and this permission notice shall be included in all
  *  copies or substantial portions of the Software.
- *  
+ *
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  *  FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,13 +23,17 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Messenger\GetOzonCustomerMessageChat;
+namespace BaksDev\Ozon\Support\Schedule\FindProfileForCreateOzonSupport\Tests;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Ozon\Orders\Type\ProfileType\TypeProfileFbsOzon;
 use BaksDev\Ozon\Support\Api\Chat\Get\History\GetOzonChatHistoryRequest;
+use BaksDev\Ozon\Support\Api\Chat\Get\List\GetOzonChatListRequest;
+use BaksDev\Ozon\Support\Api\Chat\OzonChatDTO;
 use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
+use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat\GetOzonCustomerMessageChatMessage;
 use BaksDev\Ozon\Support\Repository\CurrentSupportByOzonChat\CurrentSupportByOzonChatRepository;
+use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Type\Priority\SupportPriority;
 use BaksDev\Support\Type\Priority\SupportPriority\Collection\SupportPriorityHeight;
@@ -40,35 +44,88 @@ use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use DateInterval;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\DependencyInjection\Attribute\When;
 
 /**
- * Получаем профиль пользователя с активным токеном на Ozon:
- *
- * - делаем запрос на получение списка чатов: открытые и с непрочитанными сообщениями
- * - фильтруем только чаты с покупателями
- * - бросаем сообщения для создания чата техподдержки (Support)
+ * @group ozon-support
  */
-#[AsMessageHandler]
-final readonly class GetOzonCustomerMessageChatHandler
+#[When(env: 'test')]
+class OzonSupportTest extends KernelTestCase
 {
-    private LoggerInterface $logger;
+    private static bool $isAddMessage = false;
 
-    public function __construct(
-        LoggerInterface $ozonSupport,
-        private DeduplicatorInterface $deduplicator,
-        private GetOzonChatHistoryRequest $chatHistoryRequest,
-        private CurrentSupportByOzonChatRepository $supportByOzonChat,
-        private SupportHandler $supportHandler,
-    )
+    private static OzonAuthorizationToken $authorization;
+
+    public static function setUpBeforeClass(): void
     {
-        $this->logger = $ozonSupport;
+        self::$authorization = new OzonAuthorizationToken(
+            new UserProfileUid(),
+            $_SERVER['TEST_OZON_TOKEN'],
+            $_SERVER['TEST_OZON_CLIENT'],
+            $_SERVER['TEST_OZON_WAREHOUSE']
+        );
+
+
+        /** @var EntityManagerInterface $em */
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+
     }
 
-    public function __invoke(GetOzonCustomerMessageChatMessage $message): void
+    public function testGetOzonChatListHandler(): GetOzonCustomerMessageChatMessage
     {
+        /** @var GetOzonChatListRequest $ozonChatListRequest */
+        $ozonChatListRequest = self::getContainer()->get(GetOzonChatListRequest::class);
+        $ozonChatListRequest->TokenHttpClient(self::$authorization);
+
+        // получаем массив чатов: открытые и с непрочитанными сообщениями
+        $listChats = $ozonChatListRequest
+            ->opened()
+            ->getListChats();
+
+        if(false === $listChats)
+        {
+            self::addWarning('List Chats not found');
+        }
+
+        self::assertNotFalse($listChats);
+
+        // только чаты с покупателями
+        $customerChats = array_filter(iterator_to_array($listChats), function(OzonChatDTO $chat) {
+            return $chat->getType() === 'Buyer_Seller';
+        });
+
+        if(empty($listChats))
+        {
+            self::addWarning('Buyer_Seller not found');
+        }
+
+        return new GetOzonCustomerMessageChatMessage((current($customerChats))->getId(), self::$authorization->getProfile());
+    }
+
+    /**
+     * @depends testGetOzonChatListHandler
+     */
+    public function testGetOzonCustomerMessageChatHandler(GetOzonCustomerMessageChatMessage $message): void
+    {
+        $container = self::getContainer();
+
+        /** @var DeduplicatorInterface $deduplicator */
+        $deduplicator = $container->get(DeduplicatorInterface::class);
+
+        /** @var GetOzonChatHistoryRequest $chatHistoryRequest */
+        $chatHistoryRequest = $container->get(GetOzonChatHistoryRequest::class);
+        $chatHistoryRequest->TokenHttpClient(self::$authorization);
+
+        /** @var CurrentSupportByOzonChatRepository $supportByOzonChat */
+        $supportByOzonChat = $container->get(CurrentSupportByOzonChatRepository::class);
+
+        /** @var SupportHandler $supportHandler */
+        $supportHandler = $container->get(SupportHandler::class);
+
         $ticket = $message->getChatId();
         $profile = $message->getProfile();
 
@@ -82,12 +139,14 @@ final readonly class GetOzonCustomerMessageChatHandler
         $supportInvariableDTO->setProfile($profile);
         $supportInvariableDTO->setType(new TypeProfileUid(TypeProfileFbsOzon::TYPE)); // @TODO ПЕРЕДЕЛАТЬ - добавить тип для Озон
 
-        $supportInvariableDTO->setTicket($message->getChatId());
+        // уникальный внешний идентификатор чата - в тесте генерируем
+        $ticketId = uniqid('test_');
+        $supportInvariableDTO->setTicket($ticketId);
         $supportInvariableDTO->setTitle('OZON'); // @TODO негде взять
         $supportDTO->setInvariable($supportInvariableDTO);
 
         // текущее событие чата по идентификатору чата (тикета) из Ozon
-        $support = $this->supportByOzonChat->find($ticket);
+        $support = $supportByOzonChat->find($ticket);
 
         if($support)
         {
@@ -95,24 +154,24 @@ final readonly class GetOzonCustomerMessageChatHandler
             $support->getDto($supportDTO);
         }
 
-        /** Сообщения чата */
         // получаем массив сообщений из чата
-        $messagesChat = $this->chatHistoryRequest
-            ->profile($profile)
+        $messagesChat = $chatHistoryRequest
             ->chatId($ticket)
             ->sortByNew()
-            ->limit(1000) // @TODO максимальный лимит?
+            ->limit(1000)
             ->getMessages();
 
-        // только непрочитанные сообщения
+        /**
+         * Фильтруем сообщения:
+         * - только непрочитанные;
+         * - кроме type seller;
+         */
         $messagesChat = array_filter(iterator_to_array($messagesChat), function(OzonMessageChatDTO $message) {
-            return false === $message->isRead();
+            return $message->getUserType() !== 'Seller'; //&& return false === $message->isRead();
         });
 
-        // @TODO все сообщения, кроме type seller
-
         //  для отслеживания созданных сообщения в чате
-        $deduplicator = $this->deduplicator
+        $deduplicator
             ->namespace('ozon-support')
             ->expiresAfter(DateInterval::createFromDateString('1 minute'));
 
@@ -130,8 +189,10 @@ final readonly class GetOzonCustomerMessageChatHandler
                 ]
             );
 
-            if($this->deduplicator->isExecuted())
+            if($deduplicator->isExecuted())
             {
+                self::addWarning('Сообщение уже добавлено');
+
                 continue;
             }
 
@@ -145,25 +206,17 @@ final readonly class GetOzonCustomerMessageChatHandler
             // при добавлении нового сообщения открываем чат заново
             $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM));
 
+            self::$isAddMessage = true;
             $deduplicator->save();
         }
 
-        $result = $this->supportHandler->handle($supportDTO);
-
-        if(false === $result instanceof Support)
+        if(true === self::$isAddMessage)
         {
-            $this->logger->critical(
-                sprintf(
-                    'ozon-support: Ошибка %s при создании/обновлении чата поддержки:
-                         Profile: %s | SupportEvent ID: %s | SupportEventInvariable.Ticker ID: %s',
-                    $result,
-                    (string) $profile,
-                    $supportDTO->getEvent(),
-                    $supportDTO->getInvariable()->getTicket(),
-                ),
-                [__FILE__.':'.__LINE__],
-            );
+            $result = $supportHandler->handle($supportDTO);
+
+            self::assertTrue($result instanceof Support);
+
+            self::addWarning('Чат добавлен/обновлен');
         }
     }
 }
-
