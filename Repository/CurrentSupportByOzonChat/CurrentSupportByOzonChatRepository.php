@@ -56,6 +56,9 @@ final readonly class CurrentSupportByOzonChatRepository
                 'invariable.event = support.event AND invariable.ticket = :ticket')
             ->setParameter('ticket', $ticket, Types::STRING);
 
+        // @TODO включаем кеш по такому имени?
+        $orm->enableCache('ozon-support');
+
         return $orm->getOneOrNullResult() ?? false;
     }
 }

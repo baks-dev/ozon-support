@@ -46,7 +46,7 @@ final readonly class FindProfileForCreateOzonSupportHandler
     public function __construct(
         LoggerInterface $ozonSupport,
         private MessageDispatchInterface $messageDispatch,
-        private AllProfileOzonTokenInterface $allOzonTokens
+        private AllProfileOzonTokenInterface $allOzonTokens,
     )
     {
         $this->logger = $ozonSupport;

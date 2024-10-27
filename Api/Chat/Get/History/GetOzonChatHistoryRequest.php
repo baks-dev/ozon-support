@@ -77,6 +77,9 @@ final class GetOzonChatHistoryRequest extends Ozon
         return $this;
     }
 
+    /**
+     * Направление сортировки сообщений: от старых к новым
+     */
     public function sortByOld(): self
     {
         $this->sort = 'Forward';
@@ -84,6 +87,9 @@ final class GetOzonChatHistoryRequest extends Ozon
         return $this;
     }
 
+    /**
+     * Направление сортировки сообщений: от новых к старым
+     */
     public function sortByNew(): self
     {
         $this->sort = 'Backward';
@@ -91,6 +97,9 @@ final class GetOzonChatHistoryRequest extends Ozon
         return $this;
     }
 
+    /**
+     * Количество значений в ответе.
+     */
     public function limit(int $limit): self
     {
         $this->limit = $limit;
@@ -131,7 +140,7 @@ final class GetOzonChatHistoryRequest extends Ozon
             $error = $response->getContent(false);
 
             $this->logger->critical(
-                sprintf('Ошибка получения истории чата (Response Code: %s, INFO: %s)', (string) $responseCode, $error),
+                sprintf('Ошибка получения истории чата от Ozon Seller API (Response Code: %s, INFO: %s)', (string) $responseCode, $error),
                 [__FILE__.':'.__LINE__]);
 
             return false;

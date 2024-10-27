@@ -30,10 +30,43 @@ use DateTimeImmutable;
 
 final readonly class OzonChatDTO
 {
-    /**
-     * Идентификатор чата
-     */
+    /** Идентификатор чата */
     private string $id;
+
+    /** Статус чата */
+    private string $status;
+
+    /** Тип чата */
+    private string $type;
+
+    /** Дата создания чата */
+    private DateTimeImmutable $created;
+
+    /** Идентификатор первого непрочитанного сообщения в чате. */
+    private int $firstUnreadMessage;
+
+    /** Количество непрочитанных сообщений в чате. */
+    private int $unreadMessageCount;
+
+    /** Идентификатор последнего сообщения в чате. */
+    private int $lastMessage;
+
+    public function __construct(array $data)
+    {
+        $this->id = $data['chat_id'];
+        $this->status = $data['chat_status'];
+        $this->type = $data['chat_type'];
+        $this->created = new \DateTimeImmutable($data['created_at']);
+        $this->firstUnreadMessage = $data['first_unread_message_id'];
+        $this->unreadMessageCount = $data['unread_count'];
+        $this->lastMessage = $data['last_message_id'];
+    }
+
+    /** Идентификатор чата */
+    public function getId(): string
+    {
+        return $this->id;
+    }
 
     /**
      * Статус чата:
@@ -42,7 +75,10 @@ final readonly class OzonChatDTO
      * Opened — открытые чаты.
      * Closed — закрытые чаты.
      */
-    private ?string $status;
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
 
     /**
      * Тип чата
@@ -50,70 +86,31 @@ final readonly class OzonChatDTO
      * Seller_Support — чат с поддержкой.
      * Buyer_Seller — чат с покупателем.
      */
-    private ?string $type;
-
-    /**
-     * Дата создания чата
-     */
-    private ?DateTimeImmutable $created;
-
-    /**
-     * Идентификатор первого непрочитанного сообщения в чате.
-     */
-    private ?int $unreadMessage;
-
-    /**
-     * Количество непрочитанных сообщений в чате.
-     */
-    private ?int $unreadMessageCount;
-
-    /**
-     * Идентификатор последнего сообщения в чате.
-     */
-    private ?int $lastMessage;
-
-    public function __construct(array $data)
-    {
-        $this->id = $data['chat_id'];
-        $this->status = $data['chat_status'];
-        $this->type = $data['chat_type'];
-        $this->created = new DateTimeImmutable($data['created_at']);
-        $this->unreadMessage = $data['first_unread_message_id'];
-        $this->unreadMessageCount = $data['unread_count'];
-        $this->lastMessage = $data['last_message_id'];
-    }
-
-    public function getId(): string
-    {
-        return $this->id;
-    }
-
-    public function getStatus(): ?string
-    {
-        return $this->status;
-    }
-
-    public function getType(): ?string
+    public function getType(): string
     {
         return $this->type;
     }
 
-    public function getCreated(): ?DateTimeImmutable
+    /** Дата создания чата */
+    public function getCreated(): DateTimeImmutable
     {
         return $this->created;
     }
 
-    public function getUnreadMessage(): ?int
+    /** Идентификатор первого непрочитанного сообщения в чате. */
+    public function getFirstUnreadMessage(): int
     {
-        return $this->unreadMessage;
+        return $this->firstUnreadMessage;
     }
 
-    public function getLastMessage(): ?int
+    /** Идентификатор последнего сообщения в чате. */
+    public function getLastMessage(): int
     {
         return $this->lastMessage;
     }
 
-    public function getUnreadMessageCount(): ?int
+    /** Идентификатор последнего сообщения в чате. */
+    public function getUnreadMessageCount(): int
     {
         return $this->unreadMessageCount;
     }

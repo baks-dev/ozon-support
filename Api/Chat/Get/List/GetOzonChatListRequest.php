@@ -68,6 +68,7 @@ final class GetOzonChatListRequest extends Ozon
      */
     private int $offset = 0;
 
+    /** Фильтр по статусу чата: только открытые чаты. */
     public function opened(): self
     {
         $this->status = 'Opened';
@@ -75,6 +76,7 @@ final class GetOzonChatListRequest extends Ozon
         return $this;
     }
 
+    /** Фильтр по статусу чата: только закрытые чаты. */
     public function closed(): self
     {
         $this->status = 'Closed';
@@ -82,6 +84,7 @@ final class GetOzonChatListRequest extends Ozon
         return $this;
     }
 
+    /** Только чаты с непрочитанными сообщениями */
     public function unreadMessageOnly(): self
     {
         $this->unreadOnly = true;
@@ -89,6 +92,7 @@ final class GetOzonChatListRequest extends Ozon
         return $this;
     }
 
+    /** Количество значений в ответе. */
     public function limit(int $limit): self
     {
         $this->limit = $limit;
@@ -96,6 +100,7 @@ final class GetOzonChatListRequest extends Ozon
         return $this;
     }
 
+    /** Количество элементов, которое будет пропущено в ответе. */
     public function offset(int $offset): self
     {
         $this->offset = $offset;
@@ -131,8 +136,8 @@ final class GetOzonChatListRequest extends Ozon
         {
             $error = $response->getContent(false);
 
-            $this->logger->critical(
-                sprintf('Ошибка получения списка чатов (Response Code: %s, INFO: %s)', (string) $responseCode, $error),
+            $this->logger->warning(
+                sprintf('Ошибка получения списка чатов от Ozon Seller API (Response Code: %s, INFO: %s)', (string) $responseCode, $error),
                 [__FILE__.':'.__LINE__]);
 
             return false;

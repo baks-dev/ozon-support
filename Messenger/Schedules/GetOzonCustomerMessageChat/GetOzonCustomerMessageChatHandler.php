@@ -26,10 +26,13 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
+use BaksDev\Core\Messenger\MessageDelay;
+use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Orders\Type\ProfileType\TypeProfileFbsOzon;
 use BaksDev\Ozon\Support\Api\Chat\Get\History\GetOzonChatHistoryRequest;
 use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
 use BaksDev\Ozon\Support\Repository\CurrentSupportByOzonChat\CurrentSupportByOzonChatRepository;
+use BaksDev\Ozon\Support\Repository\FindExistOzonMessageChat\FindExistMessageChatRepository;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Type\Priority\SupportPriority;
 use BaksDev\Support\Type\Priority\SupportPriority\Collection\SupportPriorityHeight;
@@ -45,22 +48,22 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- * Получаем профиль пользователя с активным токеном на Ozon:
- *
- * - делаем запрос на получение списка чатов: открытые и с непрочитанными сообщениями
- * - фильтруем только чаты с покупателями
- * - бросаем сообщения для создания чата техподдержки (Support)
+ * // @TODO добавить описание
  */
 #[AsMessageHandler]
-final readonly class GetOzonCustomerMessageChatHandler
+final class GetOzonCustomerMessageChatHandler
 {
     private LoggerInterface $logger;
 
+    private bool $isAddMessage = false;
+
     public function __construct(
         LoggerInterface $ozonSupport,
+        private MessageDispatchInterface $messageDispatch,
         private DeduplicatorInterface $deduplicator,
         private GetOzonChatHistoryRequest $chatHistoryRequest,
         private CurrentSupportByOzonChatRepository $supportByOzonChat,
+        private FindExistMessageChatRepository $messageExist,
         private SupportHandler $supportHandler,
     )
     {
@@ -74,16 +77,16 @@ final readonly class GetOzonCustomerMessageChatHandler
 
         $supportDTO = new SupportDTO();
 
-        // подготавливаю DTO для события
-        $supportDTO->setPriority(new SupportPriority(SupportPriorityHeight::PARAM)); // Customer - высокий приоритет
-        $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM)); // Для нового сообщения - open
+        /** Подготавливаю DTO для события */
+        $supportDTO->setPriority(new SupportPriority(SupportPriorityHeight::PARAM)); // CustomerMessage - высокий приоритет
+        $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM)); // Для нового сообщения - StatusOpen
 
         $supportInvariableDTO = new SupportInvariableDTO();
         $supportInvariableDTO->setProfile($profile);
         $supportInvariableDTO->setType(new TypeProfileUid(TypeProfileFbsOzon::TYPE)); // @TODO ПЕРЕДЕЛАТЬ - добавить тип для Озон
 
         $supportInvariableDTO->setTicket($message->getChatId());
-        $supportInvariableDTO->setTitle('OZON'); // @TODO негде взять
+        $supportInvariableDTO->setTitle('OZON'); // @TODO прикрутить анализ текста из data
         $supportDTO->setInvariable($supportInvariableDTO);
 
         // текущее событие чата по идентификатору чата (тикета) из Ozon
@@ -91,7 +94,7 @@ final readonly class GetOzonCustomerMessageChatHandler
 
         if($support)
         {
-            // пересохраняю событие с новыми данными
+            /** Пересохраняю событие с новыми данными */
             $support->getDto($supportDTO);
         }
 
@@ -101,28 +104,56 @@ final readonly class GetOzonCustomerMessageChatHandler
             ->profile($profile)
             ->chatId($ticket)
             ->sortByNew()
-            ->limit(1000) // @TODO максимальный лимит?
+            ->limit(1000)
             ->getMessages();
+
+        if(false === $messagesChat)
+        {
+            $this->logger->warning(
+                'Повтор выполнения через 1 час',
+                [__FILE__.':'.__LINE__],
+            );
+
+            $this->messageDispatch
+                ->dispatch(
+                    message: $message,
+                    // задержка 1 час для повторного запроса на получение сообщений чата
+                    stamps: [new MessageDelay(DateInterval::createFromDateString('1 hour'))],
+                    transport: (string) $profile,
+                );
+
+            return;
+        }
 
         /**
          * Фильтруем сообщения:
-         * - только непрочитанные;
+         * - непрочитанные;
          * - кроме type seller;
          */
         $messagesChat = array_filter(iterator_to_array($messagesChat), function(OzonMessageChatDTO $message) {
             return false === $message->isRead() && $message->getUserType() !== 'Seller';
         });
 
+        if(empty($messagesChat))
+        {
+            $this->logger->info(
+                'Нет непрочитанных сообщений',
+                [__FILE__.':'.__LINE__],
+            );
+
+            return;
+        }
+
         //  для отслеживания созданных сообщения в чате
-        $deduplicator = $this->deduplicator
+        $this->deduplicator
             ->namespace('ozon-support')
-            ->expiresAfter(DateInterval::createFromDateString('1 minute'));
+            ->expiresAfter(DateInterval::createFromDateString('1 minute')); // @TODO на сколько временя сохранять?
 
         /** @var OzonMessageChatDTO $chatMessage */
         foreach($messagesChat as $chatMessage)
         {
             // уникальный ключ сообщения для его проверки существования в текущем чате по данным о сообщении из Ozon
-            $deduplicator->deduplication(
+            $this->deduplicator->deduplication(
                 [
                     $ticket,
                     $chatMessage->getId(),
@@ -132,39 +163,68 @@ final readonly class GetOzonCustomerMessageChatHandler
                 ]
             );
 
+            // проверка в дедубликаторе
             if($this->deduplicator->isExecuted())
             {
+                $this->logger->warning(
+                    'from deduplicator: сообщение уже добавлено в чат:'.$supportDTO->getEvent(),
+                    [__FILE__.':'.__LINE__],
+                );
+
                 continue;
             }
 
-            // Формируем сообщение
+            // проверка в БД
+            $messageIsExist = $this->messageExist
+                ->message($chatMessage->getId())
+                ->isExist();
+
+            if(true === $messageIsExist)
+            {
+                $this->logger->warning(
+                    'from repository: сообщение уже добавлено в чат:'.$supportDTO->getEvent(),
+                    [__FILE__.':'.__LINE__],
+                );
+
+                continue;
+            }
+
+            // подготовка DTO для нового сообщения
             $supportMessageDTO = new SupportMessageDTO();
             $supportMessageDTO->setName($chatMessage->getUser());
-            $supportMessageDTO->setMessage(current($chatMessage->getData()));
+            $supportMessageDTO->setMessage(current($chatMessage->getData())); // @TODO разобраться с данными из массива data
+            $supportMessageDTO->setDate($chatMessage->getCreated());
+
+            // уникальный идентификатор сообщения в Озон
+            $supportMessageDTO->setExternal($chatMessage->getId());
 
             $supportDTO->addMessage($supportMessageDTO);
 
             // при добавлении нового сообщения открываем чат заново
             $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM));
 
-            $deduplicator->save();
+            $this->isAddMessage = true;
+            $this->deduplicator->save();
         }
 
-        $result = $this->supportHandler->handle($supportDTO);
-
-        if(false === $result instanceof Support)
+        if(true === $this->isAddMessage)
         {
-            $this->logger->critical(
-                sprintf(
-                    'ozon-support: Ошибка %s при создании/обновлении чата поддержки:
+            $result = $this->supportHandler->handle($supportDTO);
+
+            if(false === $result instanceof Support)
+            {
+                $this->logger->critical(
+                    sprintf(
+                        'ozon-support: Ошибка %s при создании/обновлении чата поддержки:
                          Profile: %s | SupportEvent ID: %s | SupportEventInvariable.Ticker ID: %s',
-                    $result,
-                    (string) $profile,
-                    $supportDTO->getEvent(),
-                    $supportDTO->getInvariable()->getTicket(),
-                ),
-                [__FILE__.':'.__LINE__],
-            );
+                        $result,
+                        (string) $profile,
+                        $supportDTO->getEvent(),
+                        $supportDTO->getInvariable()->getTicket(),
+                    ),
+                    [__FILE__.':'.__LINE__],
+                );
+            }
         }
     }
 }

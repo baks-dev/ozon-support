@@ -52,10 +52,12 @@ final class GetOzonCustomerMessageChatMessage
 
         $this->chatId = $chatId;
     }
+
     public function getChatId(): string
     {
         return $this->chatId;
     }
+
     public function getProfile(): UserProfileUid
     {
         return $this->profile;

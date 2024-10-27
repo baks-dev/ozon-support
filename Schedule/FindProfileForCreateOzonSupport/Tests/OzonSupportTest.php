@@ -46,7 +46,6 @@ use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use DateInterval;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -68,11 +67,6 @@ class OzonSupportTest extends KernelTestCase
             $_SERVER['TEST_OZON_CLIENT'],
             $_SERVER['TEST_OZON_WAREHOUSE']
         );
-
-
-        /** @var EntityManagerInterface $em */
-        $em = self::getContainer()->get(EntityManagerInterface::class);
-
     }
 
     public function testGetOzonChatListHandler(): GetOzonCustomerMessageChatMessage

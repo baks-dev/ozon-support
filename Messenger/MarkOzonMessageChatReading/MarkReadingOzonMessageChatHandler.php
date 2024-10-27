@@ -27,24 +27,25 @@ namespace BaksDev\Ozon\Support\Messenger\MarkOzonMessageChatReading;
 
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
-use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
-use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusOpen;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- *
+ * // @TODO добавить описание
  */
 #[AsMessageHandler]
-final readonly class MarkReadingOzonMessageChatHandler
+final class MarkReadingOzonMessageChatHandler
 {
     private LoggerInterface $logger;
+
+    private ?\DateTimeImmutable $lastMessageDate = null;
 
     public function __construct(
         LoggerInterface $ozonSupport,
         private CurrentSupportEventRepository $currentSupportEvent,
+        private MarkReadingOzonMessageChatRequest $markReadingOzonMessageChatRequest,
     )
     {
         $this->logger = $ozonSupport;
@@ -52,33 +53,54 @@ final readonly class MarkReadingOzonMessageChatHandler
 
     public function __invoke(SupportMessage $message): void
     {
-        $chat = new SupportDTO();
+        dump('-----MarkReadingOzonMessageChatHandler------');
+
+        $supportDTO = new SupportDTO();
 
         $supportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
             ->execute();
 
-        $supportEvent->getDto($chat);
+        $supportEvent->getDto($supportDTO);
 
-        /** @var SupportMessageDTO $lastMessage */
-        $lastMessage = $chat->getMessages()->last();
+        $lastMessage = $supportDTO->getMessages()->filter(function(SupportMessageDTO $messageDTO) {
 
-        // статус чата открыт - при создании чата или добавлении нового сообщения в чат
-        if($chat->getStatus()->getSupportStatus() instanceof SupportStatusOpen)
+            if(null === $this->lastMessageDate)
+            {
+                $this->lastMessageDate = $messageDTO->getDate();
+
+                return true;
+            }
+            else
+            {
+                if($messageDTO->getDate() > $this->lastMessageDate)
+                {
+                    $this->lastMessageDate = $messageDTO->getDate();
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        });
+
+        if($lastMessage->count() !== 1)
         {
-            dump('-----MarkReadingOzonMessageChatHandler------');
+            // @TODO добавить описание
+            $this->logger->critical(
+                'Ошибка при отправки ответа на сообщение: '.$supportDTO->getEvent().'. (ошибка при получении последнего сообщения из коллекции)',
+                [__FILE__.':'.__LINE__]);
+
+            return;
         }
 
-        if($chat->getStatus()->getSupportStatus() instanceof SupportStatusClose)
-        {
-            dump('-----MarkReadingOzonMessageChatHandler------');
-
-            // отправляем запрос на прочтение
-            // @TODO для прода
-            //            $this->readingOzonMessageChatRequest
-            //                ->chatId($chat->getInvariable()->getTicket())
-            //                ->fromMessage($lastMessage->get);
-        }
+        // отправляем запрос на прочтение
+        // @TODO для прода
+        //        $this->markReadingOzonMessageChatRequest
+        //            ->chatId($supportDTO->getInvariable()->getTicket())
+        //            ->fromMessage($lastMessage->current());
     }
 }
 

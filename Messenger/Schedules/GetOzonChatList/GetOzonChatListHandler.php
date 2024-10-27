@@ -25,10 +25,12 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList;
 
+use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Chat\Get\List\GetOzonChatListRequest;
 use BaksDev\Ozon\Support\Api\Chat\OzonChatDTO;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat\GetOzonCustomerMessageChatMessage;
+use DateInterval;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -59,7 +61,11 @@ final readonly class GetOzonChatListHandler
     {
         $profile = $message->getProfile();
 
-        // получаем массив чатов: открытые и с непрочитанными сообщениями
+        /**
+         * Получаем массив чатов:
+         * - открытые
+         * - с непрочитанными сообщениями
+         */
         $listChats = $this->ozonChatListRequest
             ->profile($profile)
             ->opened()
@@ -69,11 +75,18 @@ final readonly class GetOzonChatListHandler
         if(false === $listChats)
         {
             $this->logger->warning(
-                '',
+                'Повтор выполнения сообщения в очереди через 1 час',
                 [__FILE__.':'.__LINE__],
             );
 
-            // @TODO подумать что делать
+            $this->messageDispatch
+                ->dispatch(
+                    message: $message,
+                    // задержка 1 час для повторного запроса на получение чатов
+                    stamps: [new MessageDelay(DateInterval::createFromDateString('1 hour'))],
+                    transport: (string) $profile,
+                );
+
             return;
         }
 
@@ -85,11 +98,10 @@ final readonly class GetOzonChatListHandler
         if(empty($customerChats))
         {
             $this->logger->warning(
-                '',
+                'Нет открытых и непрочитанных чатов с покупателями',
                 [__FILE__.':'.__LINE__],
             );
 
-            // @TODO подумать что делать
             return;
         }
 
@@ -101,7 +113,6 @@ final readonly class GetOzonChatListHandler
                 transport: (string) $profile,
             );
         }
-
     }
 }
 

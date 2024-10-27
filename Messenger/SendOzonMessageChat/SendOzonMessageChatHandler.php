@@ -25,26 +25,29 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\SendOzonMessageChat;
 
+use BaksDev\Ozon\Support\Api\Message\Post\Send\SendOzonChatMessageRequest;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
-use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusOpen;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- *
+ * // @TODO добавить описание
  */
 #[AsMessageHandler]
-final readonly class SendOzonMessageChatHandler
+final class SendOzonMessageChatHandler
 {
     private LoggerInterface $logger;
+
+    private ?\DateTimeImmutable $lastMessageDate = null;
 
     public function __construct(
         LoggerInterface $ozonSupport,
         private CurrentSupportEventRepository $currentSupportEvent,
+        private SendOzonChatMessageRequest $sendMessageRequest,
     )
     {
         $this->logger = $ozonSupport;
@@ -52,60 +55,60 @@ final readonly class SendOzonMessageChatHandler
 
     public function __invoke(SupportMessage $message): void
     {
-        $chat = new SupportDTO();
+        dump('-----SendOzonMessageChatHandler------');
+
+        $supportDTO = new SupportDTO();
 
         $supportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
             ->execute();
 
-        $supportEvent->getDto($chat);
+        $supportEvent->getDto($supportDTO);
 
-
-        if($chat->getStatus()->getSupportStatus() instanceof SupportStatusClose)
+        // ответы закрывают чат - реагируем на статус SupportStatusClose
+        if($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose)
         {
 
-            /** @var SupportMessageDTO $lastMessage */
-            $lastMessage = $chat->getMessages()->last();
+            $lastMessage = $supportDTO->getMessages()->filter(function(SupportMessageDTO $currentMessage) {
 
+                if(null === $currentMessage->getExternal() && null === $this->lastMessageDate)
+                {
+                    $this->lastMessageDate = $currentMessage->getDate();
+
+                    return true;
+                }
+                else
+                {
+                    if(null === $currentMessage->getExternal() && $currentMessage->getDate() > $this->lastMessageDate)
+                    {
+                        $this->lastMessageDate = $currentMessage->getDate();
+
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+
+                    }
+                }
+            });
+
+            if($lastMessage->count() !== 1)
+            {
+                // @TODO добавить описание
+                $this->logger->critical(
+                    'Ошибка при отправки ответа на сообщение: '.$supportDTO->getEvent().'. (ошибка при получении последнего сообщения из коллекции)',
+                    [__FILE__.':'.__LINE__]);
+
+                return;
+            }
 
             // @TODO для прода
-            //        $this->sendMessageRequest
-            //            ->chatId($chat->getInvariable()->getTicket())
-            //            ->message($lastMessage->getMessage());
+            //                    $this->sendMessageRequest
+            //                        ->chatId($supportDTO->getInvariable()->getTicket())
+            //                        ->message($lastMessage->current());
 
-
-            /** DEBUG */
-
-            $this->logger->critical(
-                'json - '.'chat_id: '.$chat->getInvariable()->getTicket().' | text: '.$lastMessage->getMessage(),
-                [__FILE__.':'.__LINE__],
-            );
-
-            $json = [
-                "json" => [
-                    'chat_id' => $chat->getInvariable()->getTicket(),
-                    'text' => $lastMessage->getMessage(),
-                ]
-            ];
-            dump($json);
-            dump('-----SendOzonSupportChatHandler------');
-
-            /** DEBUG */
         }
-
-        /** DEBUG */
-        if($chat->getStatus()->getSupportStatus() instanceof SupportStatusOpen)
-        {
-
-            $this->logger->debug(
-                'log',
-                [__FILE__.':'.__LINE__],
-            );
-
-            dump('---без ответа---');
-            dump('-----SendOzonSupportChatHandler------');
-        }
-        /** DEBUG */
     }
 }
 
