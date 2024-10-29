@@ -26,12 +26,10 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Api\Message\Post\MarkReading;
 
 use BaksDev\Ozon\Api\Ozon;
-use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * Метод для отметки выбранного сообщения и сообщений до него прочитанными.
  */
-#[Autoconfigure(public: true)]
 final class MarkReadingOzonMessageChatRequest extends Ozon
 {
     /** Идентификатор чата */
@@ -59,7 +57,7 @@ final class MarkReadingOzonMessageChatRequest extends Ozon
      *
      * @see https://docs.ozon.ru/api/seller/#tag/ChatAPI
      */
-    public function postReading(): bool
+    public function markReading(): bool
     {
         /**
          * Выполнять операции запроса ТОЛЬКО в PROD окружении
@@ -72,13 +70,13 @@ final class MarkReadingOzonMessageChatRequest extends Ozon
         // обязательно для передачи
         if(false === $this->chatId)
         {
-            throw new \InvalidArgumentException('Invalid argument exception chat');
+            throw new \InvalidArgumentException('Обязательный для передачи параметр: chat');
         }
 
         // обязательно для передачи
         if(false === $this->fromMessage)
         {
-            throw new \InvalidArgumentException('Invalid argument exception messageId');
+            throw new \InvalidArgumentException('Обязательный для передачи параметр: messageId');
         }
 
         $response = $this->TokenHttpClient()
@@ -93,11 +91,15 @@ final class MarkReadingOzonMessageChatRequest extends Ozon
                 ]
             );
 
-        $content = $response->toArray(false);
-
-        if($response->getStatusCode() !== 200)
+        if($responseCode = $response->getStatusCode() !== 200)
         {
-            $this->logger->critical($content['code'].': '.$content['message'], [self::class.':'.__LINE__]);
+            $error = $response->getContent(false);
+
+            $this->logger->critical(
+                sprintf('Ошибка отметки выбранного сообщения прочитанными от Ozon Seller API (Response Code: %s, INFO: %s)', (string) $responseCode, $error),
+                [__FILE__.':'.__LINE__]);
+
+            return false;
         }
 
         return true;

@@ -46,7 +46,10 @@ final readonly class OzonMessageChatDTO
     private bool $read;
 
     /** Массив с содержимым сообщения в формате Markdown.  */
-    private array $data;
+    private string $text;
+
+    /** ВНУТРЕННИЙ ПАРАМЕТР. Заголовок сообщений о возврате. */
+    private ?string $refundTitle;
 
     public function __construct(array $data)
     {
@@ -55,7 +58,24 @@ final readonly class OzonMessageChatDTO
         $this->userType = $data['user']['type'];
         $this->created = new DateTimeImmutable($data['created_at']);
         $this->read = $data['is_read'];
-        $this->data = $data['data'];
+
+        $data = $data['data'];
+
+        // Если в массиве дата больше одного значения - это возврат. Первый элемент массива - номер возврата
+        if(count($data) > 1)
+        {
+            $this->text = $data[1];
+            $this->refundTitle = $data[0];
+        }
+
+        // если в массиве один элемент - это простое сообщение
+        if(count($data) === 1)
+        {
+            $messageText = current($data);
+
+            $this->text = $messageText;
+            $this->refundTitle = null;
+        }
     }
 
     /** Идентификатор сообщения. */
@@ -97,8 +117,14 @@ final readonly class OzonMessageChatDTO
     }
 
     /** Массив с содержимым сообщения в формате Markdown.  */
-    public function getData(): array
+    public function getText(): string
     {
-        return $this->data;
+        return $this->text;
+    }
+
+    /** ВНУТРЕННИЙ ПАРАМЕТР. Заголовок сообщений о возврате. */
+    public function getRefundTitle(): ?string
+    {
+        return $this->refundTitle;
     }
 }

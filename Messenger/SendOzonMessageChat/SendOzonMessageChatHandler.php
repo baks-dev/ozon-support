@@ -25,27 +25,33 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\SendOzonMessageChat;
 
-use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
+use BaksDev\Core\Messenger\MessageDelay;
+use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Message\Post\Send\SendOzonChatMessageRequest;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
+use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
+use DateInterval;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- * // @TODO добавить описание
+ * При ответе на пользовательские сообщения:
+ * - получаем текущее событие чата;
+ * - проверяем статус чата - наши ответы закрывают чат - реагируем на статус SupportStatusClose;
+ * - отправляем последнее добавленное сообщение - наш ответ;
+ * - в случае ошибки OZON API повторяем текущий процесс через интервал времени.
  */
 #[AsMessageHandler]
-final class SendOzonMessageChatHandler
+final readonly class SendOzonMessageChatHandler
 {
     private LoggerInterface $logger;
 
-    private ?\DateTimeImmutable $lastMessageDate = null;
-
     public function __construct(
         LoggerInterface $ozonSupport,
+        private MessageDispatchInterface $messageDispatch,
         private CurrentSupportEventRepository $currentSupportEvent,
         private SendOzonChatMessageRequest $sendMessageRequest,
     )
@@ -55,8 +61,6 @@ final class SendOzonMessageChatHandler
 
     public function __invoke(SupportMessage $message): void
     {
-        dump('-----SendOzonMessageChatHandler------');
-
         $supportDTO = new SupportDTO();
 
         $supportEvent = $this->currentSupportEvent
@@ -68,14 +72,34 @@ final class SendOzonMessageChatHandler
         // ответы закрывают чат - реагируем на статус SupportStatusClose
         if($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose)
         {
-            /** @var OzonMessageChatDTO $lastMessage */
+            /** @var SupportMessageDTO $lastMessage */
             $lastMessage = $supportDTO->getMessages()->last();
+            $lastMessageText = $lastMessage->getMessage();
 
-            // @TODO для прода
-            //                    $this->sendMessageRequest
-            //                        ->chatId($supportDTO->getInvariable()->getTicket())
-            //                        ->message($lastMessage);
+            $externalChatId = $supportDTO->getInvariable()->getTicket();
 
+            $result = $this->sendMessageRequest
+                ->chatId($externalChatId)
+                ->message($lastMessageText)
+                ->sendMessage();
+
+            if(false === $result)
+            {
+                $this->logger->warning(
+                    'Повтор выполнения сообщения через 10 минут',
+                    [__FILE__.':'.__LINE__],
+                );
+
+                $profile = $supportDTO->getInvariable()->getProfile();
+
+                $this->messageDispatch
+                    ->dispatch(
+                        message: $message,
+                        // задержка 10 минут для отправки сообщение в существующий чат по его идентификатору
+                        stamps: [new MessageDelay(DateInterval::createFromDateString('10 minutes'))],
+                        transport: (string) $profile,
+                    );
+            }
         }
     }
 }

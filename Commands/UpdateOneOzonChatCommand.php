@@ -25,8 +25,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-/**
- */
 #[AsCommand(
     name: 'baks:ozon-support:chat:new:one',
     description: 'Озон'
@@ -112,7 +110,7 @@ final class UpdateOneOzonChatCommand extends Command
         /** Фильтр по чатам: статус сообщений */
         $chatMessageQuestion = new ChoiceQuestion(
             question: 'Фильтр чатов по статус сообщений',
-            choices: [ 'Чаты с непрочитанными сообщениями','Чаты с прочитанными сообщениями'],
+            choices: ['Чаты с непрочитанными сообщениями', 'Чаты с прочитанными сообщениями'],
             default: 0,
         );
 
@@ -139,6 +137,7 @@ final class UpdateOneOzonChatCommand extends Command
         /** @var OzonChatDTO $chat */
         foreach($listChats as $chat)
         {
+            $chatQuestions[] = 'Введите идентификатор чата';
             $chatQuestions[] = 'Тип чата: '.$chat->getType().' | ID: '.$chat->getId();
         }
 
@@ -154,7 +153,6 @@ final class UpdateOneOzonChatCommand extends Command
 
         $this->messageDispatch->dispatch(
             message: new GetOzonCustomerMessageChatMessage($chatId, $chosenProfile),
-        //                    transport: (string) $profile,
         );
 
         return Command::SUCCESS;

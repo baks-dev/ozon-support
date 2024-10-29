@@ -26,7 +26,6 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Api\Message\Post\Send;
 
 use BaksDev\Ozon\Api\Ozon;
-use DomainException;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
@@ -42,6 +41,7 @@ final class SendOzonChatMessageRequest extends Ozon
     /** Текст сообщения в формате plain text от 1 до 1000 символов */
     private string|false $message = false;
 
+    /** Идентификатор чата */
     public function chatId(string $chat): self
     {
         $this->chatId = $chat;
@@ -49,6 +49,7 @@ final class SendOzonChatMessageRequest extends Ozon
         return $this;
     }
 
+    /** Текст сообщения в формате plain text от 1 до 1000 символов */
     public function message(string $message): self
     {
         $this->message = $message;
@@ -57,7 +58,7 @@ final class SendOzonChatMessageRequest extends Ozon
     }
 
     /** Отправить сообщение */
-    public function postMessage(): bool
+    public function sendMessage(): bool
     {
         /**
          * Выполнять операции запроса ТОЛЬКО в PROD окружении
@@ -91,17 +92,15 @@ final class SendOzonChatMessageRequest extends Ozon
                 ]
             );
 
-        $content = $response->toArray(false);
-
-        if($response->getStatusCode() !== 200)
+        if($responseCode = $response->getStatusCode() !== 200)
         {
+            $error = $response->getContent(false);
 
-            $this->logger->critical($content['code'].': '.$content['message'], [self::class.':'.__LINE__]);
+            $this->logger->critical(
+                sprintf('Ozon Seller API Error: Ошибка отправки сообщения в существующий чат по его идентификатору (Response Code: %s, INFO: %s)', (string) $responseCode, $error),
+                [__FILE__.':'.__LINE__]);
 
-            throw new DomainException(
-                message: 'Ошибка '.self::class,
-                code: $response->getStatusCode()
-            );
+            return false;
         }
 
         return true;

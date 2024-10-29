@@ -25,26 +25,32 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\MarkOzonMessageChatReading;
 
-use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
+use BaksDev\Core\Messenger\MessageDelay;
+use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Message\Post\MarkReading\MarkReadingOzonMessageChatRequest;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
+use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
+use DateInterval;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- * // @TODO добавить описание
+ * При добавлении новых сообщений в чат:
+ * - получаем текущее событие чата;
+ * - получаем последнее добавленное сообщение;
+ * - отправляем запрос на прочтение всех сообщений, после последнего добавленного сообщения
+ * - в случае ошибки OZON API повторяем текущий процесс через интервал времени
  */
 #[AsMessageHandler]
-final class MarkReadingOzonMessageChatHandler
+final readonly class MarkReadingOzonMessageChatHandler
 {
     private LoggerInterface $logger;
 
-    private ?\DateTimeImmutable $lastMessageDate = null;
-
     public function __construct(
         LoggerInterface $ozonSupport,
+        private MessageDispatchInterface $messageDispatch,
         private CurrentSupportEventRepository $currentSupportEvent,
         private MarkReadingOzonMessageChatRequest $markReadingOzonMessageChatRequest,
     )
@@ -54,8 +60,6 @@ final class MarkReadingOzonMessageChatHandler
 
     public function __invoke(SupportMessage $message): void
     {
-        dump('-----MarkReadingOzonMessageChatHandler------');
-
         $supportDTO = new SupportDTO();
 
         $supportEvent = $this->currentSupportEvent
@@ -64,14 +68,33 @@ final class MarkReadingOzonMessageChatHandler
 
         $supportEvent->getDto($supportDTO);
 
-        /** @var OzonMessageChatDTO $lastMessage */
+        /** @var SupportMessageDTO $lastMessage */
         $lastMessage = $supportDTO->getMessages()->last();
+        $lastMessageId = (int) $lastMessage->getExternal();
 
         // отправляем запрос на прочтение
-        // @TODO для прода
-        //        $this->markReadingOzonMessageChatRequest
-        //            ->chatId($supportDTO->getInvariable()->getTicket())
-        //            ->fromMessage($lastMessage);
+        $result = $this->markReadingOzonMessageChatRequest
+            ->chatId($supportDTO->getInvariable()->getTicket())
+            ->fromMessage($lastMessageId)
+            ->markReading();
+
+        if(false === $result)
+        {
+            $this->logger->warning(
+                'Повтор выполнения сообщения через 10 минут',
+                [__FILE__.':'.__LINE__],
+            );
+
+            $profile = $supportDTO->getInvariable()->getProfile();
+
+            $this->messageDispatch
+                ->dispatch(
+                    message: $message,
+                    // задержка 10 минут для отметки выбранного сообщения и сообщений до него прочитанными
+                    stamps: [new MessageDelay(DateInterval::createFromDateString('10 minutes'))],
+                    transport: (string) $profile,
+                );
+        }
     }
 }
 

@@ -55,7 +55,7 @@ final class GetOzonChatHistoryRequest extends Ozon
      * Значение по умолчанию — 50
      * Максимальное значение — 1000.
      */
-    private int $limit = 30;
+    private int $limit = 50;
 
     /**
      * Идентификатор сообщения, с которого начать вывод истории чата.

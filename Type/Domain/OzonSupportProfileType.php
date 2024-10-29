@@ -47,7 +47,7 @@ final class OzonSupportProfileType implements TypeProfileInterface
     /** Сортировка */
     public static function priority(): int
     {
-        return 999; // @TODO какой индекс?
+        return 453;
     }
 
     public static function equals(mixed $uid): bool

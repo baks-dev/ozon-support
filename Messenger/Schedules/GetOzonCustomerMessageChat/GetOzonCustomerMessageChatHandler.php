@@ -30,10 +30,9 @@ use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Chat\Get\History\GetOzonChatHistoryRequest;
 use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
-use BaksDev\Ozon\Support\Repository\CurrentSupportByOzonChat\CurrentSupportByOzonChatRepository;
-use BaksDev\Ozon\Support\Repository\FindExistMessageChat\FindExistMessageChatRepository;
 use BaksDev\Ozon\Support\Type\Domain\OzonSupportProfileType;
 use BaksDev\Support\Entity\Support;
+use BaksDev\Support\Repository\SupportCurrentEventByTicket\CurrentSupportEventByTicketInterface;
 use BaksDev\Support\Type\Priority\SupportPriority;
 use BaksDev\Support\Type\Priority\SupportPriority\Collection\SupportPriorityHeight;
 use BaksDev\Support\Type\Status\SupportStatus;
@@ -47,9 +46,6 @@ use DateInterval;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-/**
- * // @TODO добавить описание
- */
 #[AsMessageHandler]
 final class GetOzonCustomerMessageChatHandler
 {
@@ -59,12 +55,11 @@ final class GetOzonCustomerMessageChatHandler
 
     public function __construct(
         LoggerInterface $ozonSupport,
-        private MessageDispatchInterface $messageDispatch,
-        private DeduplicatorInterface $deduplicator,
-        private GetOzonChatHistoryRequest $chatHistoryRequest,
-        private CurrentSupportByOzonChatRepository $supportByOzonChat,
-        private FindExistMessageChatRepository $messageExist,
-        private SupportHandler $supportHandler,
+        private readonly MessageDispatchInterface $messageDispatch,
+        private readonly DeduplicatorInterface $deduplicator,
+        private readonly GetOzonChatHistoryRequest $chatHistoryRequest,
+        private readonly CurrentSupportEventByTicketInterface $supportByOzonChat,
+        private readonly SupportHandler $supportHandler,
     )
     {
         $this->logger = $ozonSupport;
@@ -75,7 +70,7 @@ final class GetOzonCustomerMessageChatHandler
         //  для отслеживания созданных сообщения в чате
         $this->deduplicator
             ->namespace('ozon-support')
-            ->expiresAfter(DateInterval::createFromDateString('1 minute')); // @TODO на сколько временя сохранять?
+            ->expiresAfter(DateInterval::createFromDateString('1 day'));
 
         $ticket = $message->getChatId();
         $profile = $message->getProfile();
@@ -142,16 +137,13 @@ final class GetOzonCustomerMessageChatHandler
 
         if(empty($messagesChat))
         {
-            $this->logger->info(
-                'Нет непрочитанных сообщений',
-                [__FILE__.':'.__LINE__],
-            );
-
             return;
         }
 
         // текущее событие чата по идентификатору чата (тикета) из Ozon
-        $support = $this->supportByOzonChat->find($ticket);
+        $support = $this->supportByOzonChat
+            ->forTicket($ticket)
+            ->execute();
 
         if($support)
         {
@@ -159,34 +151,53 @@ final class GetOzonCustomerMessageChatHandler
             $support->getDto($supportDTO);
         }
 
-        $title = null;
-
-        // устанавливаем заголовок чата
+        /** Устанавливаем заголовок чата */
         if(null === $supportDTO->getInvariable()?->getTitle())
         {
-            /** @var OzonMessageChatDTO $firstMessage */
+            $title = null;
+
+            /**
+             * @var OzonMessageChatDTO $firstMessage
+             *
+             * Самое старое сообщение в диалоге
+             */
             $firstMessage = end($messagesChat);
 
-            $data = current($firstMessage->getData());
+            $messageText = $firstMessage->getText();
 
-            preg_match('/(["\'])(.*?)\1/', $data, $quotesMatches);
-
-            $article = strstr($data, 'артикул', false);
+            // ищем артикул - подставляем в заголовок
+            $article = strstr($messageText, 'артикул', false);
 
             if(is_string($article))
             {
                 $title = $article;
             }
 
+            // ищем текст в кавычках - подставляем в заголовок
+            preg_match('/(["\'])(.*?)\1/', $messageText, $quotesMatches);
+
             if(false === empty($quotesMatches))
             {
                 $title = $quotesMatches[0];
             }
-        }
 
-        if(null === $title)
+            // определяем возврат - подставляем в заголовок
+            $refund = $firstMessage->getRefundTitle();
+
+            if(null !== $refund)
+            {
+                $title = $refund;
+            }
+
+            // если ничего не найдено - по умолчанию
+            if(null === $title)
+            {
+                $title = 'OZON';
+            }
+        }
+        else
         {
-            $title = 'OZON';
+            $title = $supportDTO->getInvariable()->getTitle();
         }
 
         // устанавливаем результат
@@ -200,10 +211,7 @@ final class GetOzonCustomerMessageChatHandler
             // уникальный ключ сообщения для его проверки существования в текущем чате по данным о сообщении из Ozon
             $this->deduplicator->deduplication(
                 [
-                    $ticket,
-                    $chatMessage->getId(),
-                    $chatMessage->getUser(),
-                    $profile,
+                    $chatMessage,
                     self::class,
                 ]
             );
@@ -211,34 +219,14 @@ final class GetOzonCustomerMessageChatHandler
             // проверка в дедубликаторе
             if($this->deduplicator->isExecuted())
             {
-                $this->logger->warning(
-                    'from deduplicator: сообщение уже добавлено в чат:'.$supportDTO->getEvent(),
-                    [__FILE__.':'.__LINE__],
-                );
-
-                continue;
-            }
-
-            // проверка в БД
-            $messageIsExist = $this->messageExist
-                ->message($chatMessage->getId())
-                ->isExist();
-
-            if(true === $messageIsExist)
-            {
-                $this->logger->warning(
-                    'from repository: сообщение уже добавлено в чат:'.$supportDTO->getEvent(),
-                    [__FILE__.':'.__LINE__],
-                );
-
                 continue;
             }
 
             // подготовка DTO для нового сообщения
             $supportMessageDTO = new SupportMessageDTO();
             $supportMessageDTO->setName($chatMessage->getUser());
-            $supportMessageDTO->setMessage(current($chatMessage->getData())); // @TODO разобраться с данными из массива data
-            //            $supportMessageDTO->setDate($chatMessage->getCreated()); // @TODO пока не реализованно
+            $supportMessageDTO->setMessage($chatMessage->getText());
+            //            $supportMessageDTO->setDate($chatMessage->getCreated());
 
             // уникальный идентификатор сообщения в Озон
             $supportMessageDTO->setExternal($chatMessage->getId());
