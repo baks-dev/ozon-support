@@ -134,10 +134,16 @@ final class UpdateOneOzonChatCommand extends Command
             return Command::FAILURE;
         }
 
+        if(false === $listChats->valid())
+        {
+            $this->io->warning('Не найдено чатов по выбранным фильтрам');
+
+            return Command::FAILURE;
+        }
+
         /** @var OzonChatDTO $chat */
         foreach($listChats as $chat)
         {
-            $chatQuestions[] = 'Введите идентификатор чата';
             $chatQuestions[] = 'Тип чата: '.$chat->getType().' | ID: '.$chat->getId();
         }
 

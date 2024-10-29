@@ -30,7 +30,7 @@ use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Chat\Get\History\GetOzonChatHistoryRequest;
 use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
-use BaksDev\Ozon\Support\Type\Domain\OzonSupportProfileType;
+use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\SupportCurrentEventByTicket\CurrentSupportEventByTicketInterface;
 use BaksDev\Support\Type\Priority\SupportPriority;

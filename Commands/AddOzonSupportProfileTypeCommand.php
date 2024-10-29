@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Commands;
 
 use BaksDev\Core\Type\Field\InputField;
-use BaksDev\Ozon\Support\Type\Domain\OzonSupportProfileType;
+use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
 use BaksDev\Users\Profile\TypeProfile\Entity\TypeProfile;
 use BaksDev\Users\Profile\TypeProfile\Repository\ExistTypeProfile\ExistTypeProfileInterface;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
