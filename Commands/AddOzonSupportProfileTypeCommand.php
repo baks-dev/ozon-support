@@ -48,12 +48,12 @@ use Symfony\Contracts\Translation\TranslatorInterface;
     name: 'baks:users-profile-type:ozon-support',
     description: 'Добавляет тип профиля Ozon Support'
 )]
-class AddOzonSupportProfileTypeCommand extends Command
+final class AddOzonSupportProfileTypeCommand extends Command
 {
     public function __construct(
         private readonly ExistTypeProfileInterface $existTypeProfile,
         private readonly TranslatorInterface $translator,
-        private readonly TypeProfileHandler $profileHandler
+        private readonly TypeProfileHandler $profileHandler,
     )
     {
         parent::__construct();
