@@ -21,7 +21,7 @@
  *  THE SOFTWARE.
  */
 
-namespace BaksDev\Ozon\Support\Repository\FindExistOzonMessageChat;
+namespace BaksDev\Ozon\Support\Repository\FindExistMessageChat;
 
 use BaksDev\Core\Doctrine\DBALQueryBuilder;
 use BaksDev\Support\Entity\Event\SupportEvent;

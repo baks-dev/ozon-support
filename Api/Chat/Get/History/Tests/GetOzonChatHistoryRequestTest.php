@@ -58,8 +58,8 @@ class GetOzonChatHistoryRequestTest extends KernelTestCase
         $ozonChatHistoryRequest->TokenHttpClient(self::$Authorization);
 
         $messages = $ozonChatHistoryRequest
-            ->chatId('90145814-406d-4e46-8b43-d5287f9052c2')
-            ->limit(1)
+            ->chatId('41e5c5f2-804a-491a-837c-150481a9c353')
+            ->limit(100)
             ->getMessages();
 
         dd(iterator_to_array($messages));

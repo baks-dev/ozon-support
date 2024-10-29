@@ -25,9 +25,10 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\MarkOzonMessageChatReading;
 
+use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
+use BaksDev\Ozon\Support\Api\Message\Post\MarkReading\MarkReadingOzonMessageChatRequest;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
-use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -63,44 +64,14 @@ final class MarkReadingOzonMessageChatHandler
 
         $supportEvent->getDto($supportDTO);
 
-        $lastMessage = $supportDTO->getMessages()->filter(function(SupportMessageDTO $messageDTO) {
-
-            if(null === $this->lastMessageDate)
-            {
-                $this->lastMessageDate = $messageDTO->getDate();
-
-                return true;
-            }
-            else
-            {
-                if($messageDTO->getDate() > $this->lastMessageDate)
-                {
-                    $this->lastMessageDate = $messageDTO->getDate();
-
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-        });
-
-        if($lastMessage->count() !== 1)
-        {
-            // @TODO добавить описание
-            $this->logger->critical(
-                'Ошибка при отправки ответа на сообщение: '.$supportDTO->getEvent().'. (ошибка при получении последнего сообщения из коллекции)',
-                [__FILE__.':'.__LINE__]);
-
-            return;
-        }
+        /** @var OzonMessageChatDTO $lastMessage */
+        $lastMessage = $supportDTO->getMessages()->last();
 
         // отправляем запрос на прочтение
         // @TODO для прода
         //        $this->markReadingOzonMessageChatRequest
         //            ->chatId($supportDTO->getInvariable()->getTicket())
-        //            ->fromMessage($lastMessage->current());
+        //            ->fromMessage($lastMessage);
     }
 }
 

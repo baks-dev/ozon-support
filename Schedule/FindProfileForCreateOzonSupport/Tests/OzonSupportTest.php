@@ -26,13 +26,13 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Schedule\FindProfileForCreateOzonSupport\Tests;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
-use BaksDev\Ozon\Orders\Type\ProfileType\TypeProfileFbsOzon;
 use BaksDev\Ozon\Support\Api\Chat\Get\History\GetOzonChatHistoryRequest;
 use BaksDev\Ozon\Support\Api\Chat\Get\List\GetOzonChatListRequest;
 use BaksDev\Ozon\Support\Api\Chat\OzonChatDTO;
 use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat\GetOzonCustomerMessageChatMessage;
 use BaksDev\Ozon\Support\Repository\CurrentSupportByOzonChat\CurrentSupportByOzonChatRepository;
+use BaksDev\Ozon\Support\Type\Domain\OzonSupportProfileType;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Type\Priority\SupportPriority;
@@ -97,7 +97,11 @@ class OzonSupportTest extends KernelTestCase
             self::addWarning('Buyer_Seller not found');
         }
 
-        return new GetOzonCustomerMessageChatMessage((current($customerChats))->getId(), self::$authorization->getProfile());
+        //        dd($customerChats);
+        //        $chatId = current($customerChats)->getId();
+        $chatId = '41e5c5f2-804a-491a-837c-150481a9c353';
+
+        return new GetOzonCustomerMessageChatMessage($chatId, self::$authorization->getProfile());
     }
 
     /**
@@ -109,6 +113,11 @@ class OzonSupportTest extends KernelTestCase
 
         /** @var DeduplicatorInterface $deduplicator */
         $deduplicator = $container->get(DeduplicatorInterface::class);
+
+        //  для отслеживания созданных сообщения в чате
+        $deduplicator
+            ->namespace('ozon-support')
+            ->expiresAfter(DateInterval::createFromDateString('1 minute'));
 
         /** @var GetOzonChatHistoryRequest $chatHistoryRequest */
         $chatHistoryRequest = $container->get(GetOzonChatHistoryRequest::class);
@@ -123,30 +132,25 @@ class OzonSupportTest extends KernelTestCase
         $ticket = $message->getChatId();
         $profile = $message->getProfile();
 
+        /** Подготавливаю DTO для события */
         $supportDTO = new SupportDTO();
-
-        // подготавливаю DTO для события
         $supportDTO->setPriority(new SupportPriority(SupportPriorityHeight::PARAM)); // Customer - высокий приоритет
         $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM)); // Для нового сообщения - open
 
         $supportInvariableDTO = new SupportInvariableDTO();
         $supportInvariableDTO->setProfile($profile);
-        $supportInvariableDTO->setType(new TypeProfileUid(TypeProfileFbsOzon::TYPE)); // @TODO ПЕРЕДЕЛАТЬ - добавить тип для Озон
+
+        if(false === class_exists(OzonSupportProfileType::class))
+        {
+            self::addWarning('OzonSupportProfileType not found');
+            self::assertTrue(false);
+        }
+
+        $supportInvariableDTO->setType(new TypeProfileUid(OzonSupportProfileType::TYPE)); // @TODO ПЕРЕДЕЛАТЬ - добавить тип для Озон
 
         // уникальный внешний идентификатор чата - в тесте генерируем
         $ticketId = uniqid('test_');
         $supportInvariableDTO->setTicket($ticketId);
-        $supportInvariableDTO->setTitle('OZON'); // @TODO негде взять
-        $supportDTO->setInvariable($supportInvariableDTO);
-
-        // текущее событие чата по идентификатору чата (тикета) из Ozon
-        $support = $supportByOzonChat->find($ticket);
-
-        if($support)
-        {
-            // пересохраняю событие с новыми данными
-            $support->getDto($supportDTO);
-        }
 
         // получаем массив сообщений из чата
         $messagesChat = $chatHistoryRequest
@@ -164,10 +168,55 @@ class OzonSupportTest extends KernelTestCase
             return $message->getUserType() !== 'Seller'; //&& return false === $message->isRead();
         });
 
-        //  для отслеживания созданных сообщения в чате
-        $deduplicator
-            ->namespace('ozon-support')
-            ->expiresAfter(DateInterval::createFromDateString('1 minute'));
+
+        // текущее событие чата по идентификатору чата (тикета) из Ozon
+        $support = $supportByOzonChat->find($ticket);
+
+        if($support)
+        {
+            // пересохраняю событие с новыми данными
+            $support->getDto($supportDTO);
+        }
+
+        $title = null;
+
+        // устанавливаем заголовок чата
+        if(null === $supportDTO->getInvariable())
+        {
+            /** @var OzonMessageChatDTO $firstMessage */
+            $firstMessage = end($messagesChat);
+
+            $data = current($firstMessage->getData());
+
+            preg_match('/(["\'])(.*?)\1/', $data, $quotesMatches);
+
+            $article = strstr($data, 'артикул', false);
+
+            if(is_string($article))
+            {
+                $title = $article;
+            }
+
+            if(false === empty($quotesMatches))
+            {
+                $title = $quotesMatches[0];
+            }
+
+            if(null === $title)
+            {
+                $title = 'OZON';
+            }
+        }
+
+        if(null === $title)
+        {
+            $title = 'OZON';
+        }
+
+        // устанавливаем результат
+        $supportInvariableDTO->setTitle($title);
+        // добавляем в
+        $supportDTO->setInvariable($supportInvariableDTO);
 
         /** @var OzonMessageChatDTO $chatMessage */
         foreach($messagesChat as $chatMessage)
@@ -194,6 +243,10 @@ class OzonSupportTest extends KernelTestCase
             $supportMessageDTO = new SupportMessageDTO();
             $supportMessageDTO->setName($chatMessage->getUser());
             $supportMessageDTO->setMessage(current($chatMessage->getData()));
+            //            $supportMessageDTO->setDate($chatMessage->getCreated()); // @TODO пока не реализованно
+
+            // уникальный идентификатор сообщения в Озон
+            $supportMessageDTO->setExternal($chatMessage->getId());
 
             $supportDTO->addMessage($supportMessageDTO);
 

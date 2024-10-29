@@ -25,11 +25,11 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\SendOzonMessageChat;
 
+use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
 use BaksDev\Ozon\Support\Api\Message\Post\Send\SendOzonChatMessageRequest;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
-use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -68,45 +68,13 @@ final class SendOzonMessageChatHandler
         // ответы закрывают чат - реагируем на статус SupportStatusClose
         if($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose)
         {
-
-            $lastMessage = $supportDTO->getMessages()->filter(function(SupportMessageDTO $currentMessage) {
-
-                if(null === $currentMessage->getExternal() && null === $this->lastMessageDate)
-                {
-                    $this->lastMessageDate = $currentMessage->getDate();
-
-                    return true;
-                }
-                else
-                {
-                    if(null === $currentMessage->getExternal() && $currentMessage->getDate() > $this->lastMessageDate)
-                    {
-                        $this->lastMessageDate = $currentMessage->getDate();
-
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-
-                    }
-                }
-            });
-
-            if($lastMessage->count() !== 1)
-            {
-                // @TODO добавить описание
-                $this->logger->critical(
-                    'Ошибка при отправки ответа на сообщение: '.$supportDTO->getEvent().'. (ошибка при получении последнего сообщения из коллекции)',
-                    [__FILE__.':'.__LINE__]);
-
-                return;
-            }
+            /** @var OzonMessageChatDTO $lastMessage */
+            $lastMessage = $supportDTO->getMessages()->last();
 
             // @TODO для прода
             //                    $this->sendMessageRequest
             //                        ->chatId($supportDTO->getInvariable()->getTicket())
-            //                        ->message($lastMessage->current());
+            //                        ->message($lastMessage);
 
         }
     }

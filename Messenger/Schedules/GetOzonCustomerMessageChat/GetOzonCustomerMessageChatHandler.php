@@ -28,11 +28,11 @@ namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat;
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
-use BaksDev\Ozon\Orders\Type\ProfileType\TypeProfileFbsOzon;
 use BaksDev\Ozon\Support\Api\Chat\Get\History\GetOzonChatHistoryRequest;
 use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
 use BaksDev\Ozon\Support\Repository\CurrentSupportByOzonChat\CurrentSupportByOzonChatRepository;
-use BaksDev\Ozon\Support\Repository\FindExistOzonMessageChat\FindExistMessageChatRepository;
+use BaksDev\Ozon\Support\Repository\FindExistMessageChat\FindExistMessageChatRepository;
+use BaksDev\Ozon\Support\Type\Domain\OzonSupportProfileType;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Type\Priority\SupportPriority;
 use BaksDev\Support\Type\Priority\SupportPriority\Collection\SupportPriorityHeight;
@@ -72,31 +72,37 @@ final class GetOzonCustomerMessageChatHandler
 
     public function __invoke(GetOzonCustomerMessageChatMessage $message): void
     {
+        //  для отслеживания созданных сообщения в чате
+        $this->deduplicator
+            ->namespace('ozon-support')
+            ->expiresAfter(DateInterval::createFromDateString('1 minute')); // @TODO на сколько временя сохранять?
+
         $ticket = $message->getChatId();
         $profile = $message->getProfile();
 
+        /** DTO для SupportEvent */
         $supportDTO = new SupportDTO();
 
-        /** Подготавливаю DTO для события */
         $supportDTO->setPriority(new SupportPriority(SupportPriorityHeight::PARAM)); // CustomerMessage - высокий приоритет
         $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM)); // Для нового сообщения - StatusOpen
 
+        /** DTO для SupportInvariable */
         $supportInvariableDTO = new SupportInvariableDTO();
         $supportInvariableDTO->setProfile($profile);
-        $supportInvariableDTO->setType(new TypeProfileUid(TypeProfileFbsOzon::TYPE)); // @TODO ПЕРЕДЕЛАТЬ - добавить тип для Озон
+
+        if(false === class_exists(OzonSupportProfileType::class))
+        {
+            $this->logger->critical(
+                'Не добавлен тип профиля Ozon Support. Добавьте OzonSupportProfileType запустив соответствую команду',
+                [__FILE__.':'.__LINE__],
+            );
+
+            return;
+        }
+
+        $supportInvariableDTO->setType(new TypeProfileUid(OzonSupportProfileType::TYPE));
 
         $supportInvariableDTO->setTicket($message->getChatId());
-        $supportInvariableDTO->setTitle('OZON'); // @TODO прикрутить анализ текста из data
-        $supportDTO->setInvariable($supportInvariableDTO);
-
-        // текущее событие чата по идентификатору чата (тикета) из Ozon
-        $support = $this->supportByOzonChat->find($ticket);
-
-        if($support)
-        {
-            /** Пересохраняю событие с новыми данными */
-            $support->getDto($supportDTO);
-        }
 
         /** Сообщения чата */
         // получаем массив сообщений из чата
@@ -144,10 +150,49 @@ final class GetOzonCustomerMessageChatHandler
             return;
         }
 
-        //  для отслеживания созданных сообщения в чате
-        $this->deduplicator
-            ->namespace('ozon-support')
-            ->expiresAfter(DateInterval::createFromDateString('1 minute')); // @TODO на сколько временя сохранять?
+        // текущее событие чата по идентификатору чата (тикета) из Ozon
+        $support = $this->supportByOzonChat->find($ticket);
+
+        if($support)
+        {
+            /** Пересохраняю событие с новыми данными */
+            $support->getDto($supportDTO);
+        }
+
+        $title = null;
+
+        // устанавливаем заголовок чата
+        if(null === $supportDTO->getInvariable()?->getTitle())
+        {
+            /** @var OzonMessageChatDTO $firstMessage */
+            $firstMessage = end($messagesChat);
+
+            $data = current($firstMessage->getData());
+
+            preg_match('/(["\'])(.*?)\1/', $data, $quotesMatches);
+
+            $article = strstr($data, 'артикул', false);
+
+            if(is_string($article))
+            {
+                $title = $article;
+            }
+
+            if(false === empty($quotesMatches))
+            {
+                $title = $quotesMatches[0];
+            }
+        }
+
+        if(null === $title)
+        {
+            $title = 'OZON';
+        }
+
+        // устанавливаем результат
+        $supportInvariableDTO->setTitle($title);
+        // добавляем в
+        $supportDTO->setInvariable($supportInvariableDTO);
 
         /** @var OzonMessageChatDTO $chatMessage */
         foreach($messagesChat as $chatMessage)
@@ -193,7 +238,7 @@ final class GetOzonCustomerMessageChatHandler
             $supportMessageDTO = new SupportMessageDTO();
             $supportMessageDTO->setName($chatMessage->getUser());
             $supportMessageDTO->setMessage(current($chatMessage->getData())); // @TODO разобраться с данными из массива data
-            $supportMessageDTO->setDate($chatMessage->getCreated());
+            //            $supportMessageDTO->setDate($chatMessage->getCreated()); // @TODO пока не реализованно
 
             // уникальный идентификатор сообщения в Озон
             $supportMessageDTO->setExternal($chatMessage->getId());

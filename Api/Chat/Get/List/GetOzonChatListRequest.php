@@ -119,7 +119,7 @@ final class GetOzonChatListRequest extends Ozon
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',
-                '/v2/chat/list',
+                'v2/chat/list',
                 [
                     "json" => [
                         'filter' => [
@@ -136,7 +136,7 @@ final class GetOzonChatListRequest extends Ozon
         {
             $error = $response->getContent(false);
 
-            $this->logger->warning(
+            $this->logger->critical(
                 sprintf('Ошибка получения списка чатов от Ozon Seller API (Response Code: %s, INFO: %s)', (string) $responseCode, $error),
                 [__FILE__.':'.__LINE__]);
 
