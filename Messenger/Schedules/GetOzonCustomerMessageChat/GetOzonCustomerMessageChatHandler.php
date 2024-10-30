@@ -26,7 +26,6 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
-use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Chat\Get\History\GetOzonChatHistoryRequest;
 use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
@@ -105,23 +104,20 @@ final class GetOzonCustomerMessageChatHandler
             ->profile($profile)
             ->chatId($ticket)
             ->sortByNew()
-            ->limit(1000)
+            ->limit(50)
             ->getMessages();
 
         if(false === $messagesChat)
         {
+            return;
+        }
+
+        if(false === $messagesChat->valid())
+        {
             $this->logger->warning(
-                'Повтор выполнения через 1 час',
+                'Не найдено сообщений по выбранным фильтрам',
                 [__FILE__.':'.__LINE__],
             );
-
-            $this->messageDispatch
-                ->dispatch(
-                    message: $message,
-                    // задержка 1 час для повторного запроса на получение сообщений чата
-                    stamps: [new MessageDelay(DateInterval::createFromDateString('1 hour'))],
-                    transport: (string) $profile,
-                );
 
             return;
         }
@@ -143,7 +139,7 @@ final class GetOzonCustomerMessageChatHandler
         // текущее событие чата по идентификатору чата (тикета) из Ozon
         $support = $this->supportByOzonChat
             ->forTicket($ticket)
-            ->execute();
+            ->find();
 
         if($support)
         {
@@ -226,7 +222,7 @@ final class GetOzonCustomerMessageChatHandler
             $supportMessageDTO = new SupportMessageDTO();
             $supportMessageDTO->setName($chatMessage->getUser());
             $supportMessageDTO->setMessage($chatMessage->getText());
-            //            $supportMessageDTO->setDate($chatMessage->getCreated()); // @TODO пока не реализованно
+            $supportMessageDTO->setDate($chatMessage->getCreated());
 
             // уникальный идентификатор сообщения в Озон
             $supportMessageDTO->setExternal($chatMessage->getId());

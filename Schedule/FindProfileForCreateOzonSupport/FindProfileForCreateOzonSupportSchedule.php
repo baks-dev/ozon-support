@@ -44,6 +44,6 @@ final class FindProfileForCreateOzonSupportSchedule implements ScheduleInterface
      */
     public function getInterval(): DateInterval
     {
-        return DateInterval::createFromDateString('1 hour');
+        return DateInterval::createFromDateString('5 minutes');
     }
 }

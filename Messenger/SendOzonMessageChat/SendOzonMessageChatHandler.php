@@ -66,7 +66,7 @@ final readonly class SendOzonMessageChatHandler
 
         $supportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
-            ->execute();
+            ->find();
 
         if(false === $supportEvent)
         {
@@ -86,7 +86,7 @@ final readonly class SendOzonMessageChatHandler
         if(false === $typeProfile instanceof OzonSupportProfileType)
         {
             $this->logger->critical(
-                'Ожидаемый тип профиля: OzonSupportProfileType' . '| Текущий тип профиля: ' . $typeProfile::class,
+                'Ожидаемый тип профиля: OzonSupportProfileType'.'| Текущий тип профиля: '.$typeProfile::class,
                 [__FILE__.':'.__LINE__],
             );
 

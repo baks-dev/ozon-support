@@ -62,7 +62,7 @@ class GetOzonChatHistoryRequestTest extends KernelTestCase
             ->limit(1000)
             ->getMessages();
 
-        dd(iterator_to_array($messages));
+        //        dd(iterator_to_array($messages));
 
         self::assertNotFalse($messages);
 

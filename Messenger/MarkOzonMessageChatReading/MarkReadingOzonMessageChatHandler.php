@@ -65,7 +65,7 @@ final readonly class MarkReadingOzonMessageChatHandler
 
         $supportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
-            ->execute();
+            ->find();
 
         if(false === $supportEvent)
         {

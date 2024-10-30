@@ -25,12 +25,10 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList;
 
-use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Chat\Get\List\GetOzonChatListRequest;
 use BaksDev\Ozon\Support\Api\Chat\OzonChatDTO;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat\GetOzonCustomerMessageChatMessage;
-use DateInterval;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -74,18 +72,15 @@ final readonly class GetOzonChatListHandler
 
         if(false === $listChats)
         {
+            return;
+        }
+
+        if(false === $listChats->valid())
+        {
             $this->logger->warning(
-                'Повтор выполнения сообщения в очереди через 1 час',
+                'Не найдено чатов по выбранным фильтрам',
                 [__FILE__.':'.__LINE__],
             );
-
-            $this->messageDispatch
-                ->dispatch(
-                    message: $message,
-                    // задержка 1 час для повторного запроса на получение чатов
-                    stamps: [new MessageDelay(DateInterval::createFromDateString('1 hour'))],
-                    transport: (string) $profile,
-                );
 
             return;
         }
@@ -97,11 +92,6 @@ final readonly class GetOzonChatListHandler
 
         if(empty($customerChats))
         {
-            $this->logger->warning(
-                'Нет открытых и непрочитанных чатов с покупателями',
-                [__FILE__.':'.__LINE__],
-            );
-
             return;
         }
 
