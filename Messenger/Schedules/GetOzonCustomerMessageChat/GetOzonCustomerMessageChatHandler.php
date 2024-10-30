@@ -26,7 +26,6 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
-use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Chat\Get\History\GetOzonChatHistoryRequest;
 use BaksDev\Ozon\Support\Api\Message\OzonMessageChatDTO;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
@@ -54,7 +53,6 @@ final class GetOzonCustomerMessageChatHandler
 
     public function __construct(
         LoggerInterface $ozonSupport,
-        private readonly MessageDispatchInterface $messageDispatch,
         private readonly DeduplicatorInterface $deduplicator,
         private readonly GetOzonChatHistoryRequest $chatHistoryRequest,
         private readonly CurrentSupportEventByTicketInterface $supportByOzonChat,
@@ -169,8 +167,8 @@ final class GetOzonCustomerMessageChatHandler
                 $title = $article;
             }
 
-            // ищем текст в кавычках - подставляем в заголовок
-            preg_match('/(["\'])(.*?)\1/', $messageText, $quotesMatches);
+            // ищем текст в двойных кавычках - подставляем в заголовок
+            preg_match('/"(.*?)"/', $messageText, $quotesMatches);
 
             if(false === empty($quotesMatches))
             {

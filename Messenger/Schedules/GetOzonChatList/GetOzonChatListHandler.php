@@ -70,11 +70,13 @@ final readonly class GetOzonChatListHandler
             ->unreadMessageOnly()
             ->getListChats();
 
+        // в случае ошибки при запросе
         if(false === $listChats)
         {
             return;
         }
 
+        // если список чатов пустой
         if(false === $listChats->valid())
         {
             $this->logger->warning(

@@ -25,15 +25,12 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\MarkOzonMessageChatReading;
 
-use BaksDev\Core\Messenger\MessageDelay;
-use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Message\Post\MarkReading\MarkReadingOzonMessageChatRequest;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
-use DateInterval;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -51,7 +48,6 @@ final readonly class MarkReadingOzonMessageChatHandler
 
     public function __construct(
         LoggerInterface $ozonSupport,
-        private MessageDispatchInterface $messageDispatch,
         private CurrentSupportEventRepository $currentSupportEvent,
         private MarkReadingOzonMessageChatRequest $markReadingOzonMessageChatRequest,
     )
@@ -85,10 +81,10 @@ final readonly class MarkReadingOzonMessageChatHandler
         // проверяем тип профиля
         $typeProfile = $supportDTO->getInvariable()->getType();
 
-        if(false === $typeProfile instanceof OzonSupportProfileType)
+        if(false === $typeProfile->equals(OzonSupportProfileType::TYPE))
         {
             $this->logger->critical(
-                'Ожидаемый тип профиля: OzonSupportProfileType'.'| Текущий тип профиля: '.$typeProfile::class,
+                'Идентификатор профиля не соответствует типу профиля: OzonSupportProfileType'.'| Переданный идентификатор: '.(string) $typeProfile,
                 [__FILE__.':'.__LINE__],
             );
 
@@ -114,22 +110,10 @@ final readonly class MarkReadingOzonMessageChatHandler
             ->fromMessage($lastMessageId)
             ->markReading();
 
+        // сразу пытаемся повторить запрос
         if(false === $result)
         {
-            $this->logger->warning(
-                'Повтор выполнения сообщения через 10 минут',
-                [__FILE__.':'.__LINE__],
-            );
-
-            $profile = $supportDTO->getInvariable()->getProfile();
-
-            $this->messageDispatch
-                ->dispatch(
-                    message: $message,
-                    // задержка 10 минут для отметки выбранного сообщения и сообщений до него прочитанными
-                    stamps: [new MessageDelay(DateInterval::createFromDateString('10 minutes'))],
-                    transport: (string) $profile,
-                );
+            throw new \Exception('Ошибка MarkReadingOzonMessageChatHandler');
         }
     }
 }

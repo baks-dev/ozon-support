@@ -11,6 +11,7 @@
 
 namespace BaksDev\Ozon\Support\Commands;
 
+use BaksDev\Core\Cache\AppCacheInterface;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\AllProfileToken\AllProfileOzonTokenInterface;
 use BaksDev\Ozon\Support\Api\Chat\Get\List\GetOzonChatListRequest;
@@ -23,11 +24,12 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
-    name: 'baks:ozon-support:chat:new:one',
-    description: 'Добавляет один выбранный чат и его сообщения'
+    name: 'baks:ozon-support:chat:update:one',
+    description: 'Добавляет/обновляет один выбранный чат и его сообщения'
 )]
 final class UpdateOneOzonChatCommand extends Command
 {
@@ -40,6 +42,7 @@ final class UpdateOneOzonChatCommand extends Command
         private readonly MessageDispatchInterface $messageDispatch,
         private readonly AllProfileOzonTokenInterface $allOzonTokens,
         private readonly GetOzonChatListRequest $ozonChatListRequest,
+        private readonly AppCacheInterface $cache,
     )
     {
         parent::__construct();
@@ -51,6 +54,27 @@ final class UpdateOneOzonChatCommand extends Command
         $this->io = new SymfonyStyle($input, $output);
 
         $helper = $this->getHelper('question');
+
+        // очистить кеш дедубликатора, чтобы обновить все сообщения, полученные из OZON API
+        $cacheQuestion = new ConfirmationQuestion('Очистить кеш дедубликатора? yes/no: ', false);
+        $cacheAnswer = $helper->ask($input, $output, $cacheQuestion);
+
+        if(true === $cacheAnswer)
+        {
+            if(false === $this->clearDeduplicator())
+            {
+
+                $this->io->note('Ошибка при очистке кеша');
+                return Command::FAILURE;
+            }
+
+            $this->io->note('Кеш очищен');
+        }
+
+        if(false === $cacheAnswer)
+        {
+            $this->io->note('Очистка кеша пропущена');
+        }
 
         /** Идентификаторы профилей пользователей, у которых есть активный токен Ozon */
         $profiles = $this->allOzonTokens
@@ -91,7 +115,7 @@ final class UpdateOneOzonChatCommand extends Command
         /** Фильтр по чатам: статус чата */
         $chatStatusQuestion = new ChoiceQuestion(
             question: 'Фильтр чатов по статусу чата',
-            choices: ['Открытые', 'Закрытые', 'Все'],
+            choices: ['Все', 'Открытые', 'Закрытые'],
             default: 0,
         );
 
@@ -110,8 +134,8 @@ final class UpdateOneOzonChatCommand extends Command
         /** Фильтр по чатам: статус сообщений */
         $chatMessageQuestion = new ChoiceQuestion(
             question: 'Фильтр чатов по статус сообщений',
-            choices: ['Чаты с непрочитанными сообщениями', 'Чаты с прочитанными сообщениями'],
-            default: 0,
+            choices: [1 => 'Чаты с непрочитанными сообщениями', 2 => 'Чаты с прочитанными сообщениями - прочитанные сообщения не будут добавлены в чат'],
+            default: 1,
         );
 
         $chatMessagesChoice = $helper->ask($input, $output, $chatMessageQuestion);
@@ -164,12 +188,20 @@ final class UpdateOneOzonChatCommand extends Command
         return Command::SUCCESS;
     }
 
-    /** метод для поиска ID из вывода команды */
+    /** Метод для поиска ID из вывода команды */
     private function searchId(string $search): string
     {
         $id = strstr($search, 'ID: ');
         $id = str_replace('ID: ', '', $id);
 
         return $id;
+    }
+
+    /** Очистить кеш дедубликатора, чтобы обновить все сообщения, полученные из OZON API */
+    private function clearDeduplicator(): bool
+    {
+        $cache = $this->cache->init('deduplicator-ozon-support');
+
+        return $cache->clear();
     }
 }

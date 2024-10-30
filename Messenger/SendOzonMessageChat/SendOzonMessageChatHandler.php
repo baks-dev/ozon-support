@@ -83,10 +83,10 @@ final readonly class SendOzonMessageChatHandler
         // проверяем тип профиля
         $typeProfile = $supportDTO->getInvariable()->getType();
 
-        if(false === $typeProfile instanceof OzonSupportProfileType)
+        if(false === $typeProfile->equals(OzonSupportProfileType::TYPE))
         {
             $this->logger->critical(
-                'Ожидаемый тип профиля: OzonSupportProfileType'.'| Текущий тип профиля: '.$typeProfile::class,
+                'Идентификатор профиля не соответствует типу профиля: OzonSupportProfileType'.'| Переданный идентификатор: '.(string) $typeProfile,
                 [__FILE__.':'.__LINE__],
             );
 

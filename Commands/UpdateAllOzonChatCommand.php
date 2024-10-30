@@ -27,8 +27,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * Добавляет новые чаты и его сообщения для существующих профилей с активными токенами Озон
  */
 #[AsCommand(
-    name: 'baks:ozon-support:chat:new',
-    description: 'Добавляет новые чаты и его сообщения для существующих профилей с активными токенами Озон'
+    name: 'baks:ozon-support:chat:update:all',
+    description: 'Добавляет/обновляет все чаты и их сообщения'
 )]
 final class UpdateAllOzonChatCommand extends Command
 {
