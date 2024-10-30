@@ -28,6 +28,7 @@ namespace BaksDev\Ozon\Support\Messenger\MarkOzonMessageChatReading;
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Message\Post\MarkReading\MarkReadingOzonMessageChatRequest;
+use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
@@ -66,10 +67,45 @@ final readonly class MarkReadingOzonMessageChatHandler
             ->forSupport($message->getId())
             ->execute();
 
+        if(false === $supportEvent)
+        {
+            $this->logger->critical(
+                'Ошибка получения события по идентификатору :'.$message->getId(),
+                [__FILE__.':'.__LINE__],
+            );
+
+            return;
+        }
+
         $supportEvent->getDto($supportDTO);
 
         /** @var SupportMessageDTO $lastMessage */
         $lastMessage = $supportDTO->getMessages()->last();
+
+        // проверяем тип профиля
+        $typeProfile = $supportDTO->getInvariable()->getType();
+
+        if(false === $typeProfile instanceof OzonSupportProfileType)
+        {
+            $this->logger->critical(
+                'Ожидаемый тип профиля: OzonSupportProfileType'.'| Текущий тип профиля: '.$typeProfile::class,
+                [__FILE__.':'.__LINE__],
+            );
+
+            return;
+        }
+
+        // проверяем наличие внешнего ID - обязательно для сообщений, поступающий от Ozon API
+        if(null === $lastMessage->getExternal())
+        {
+            $this->logger->critical(
+                'Для отправки сообщения необходим внешний (external) ID',
+                [__FILE__.':'.__LINE__],
+            );
+
+            return;
+        }
+
         $lastMessageId = (int) $lastMessage->getExternal();
 
         // отправляем запрос на прочтение

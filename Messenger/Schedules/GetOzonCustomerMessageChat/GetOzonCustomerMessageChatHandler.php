@@ -226,7 +226,7 @@ final class GetOzonCustomerMessageChatHandler
             $supportMessageDTO = new SupportMessageDTO();
             $supportMessageDTO->setName($chatMessage->getUser());
             $supportMessageDTO->setMessage($chatMessage->getText());
-            //            $supportMessageDTO->setDate($chatMessage->getCreated());
+            //            $supportMessageDTO->setDate($chatMessage->getCreated()); // @TODO пока не реализованно
 
             // уникальный идентификатор сообщения в Озон
             $supportMessageDTO->setExternal($chatMessage->getId());

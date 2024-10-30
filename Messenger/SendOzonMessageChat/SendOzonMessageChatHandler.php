@@ -28,6 +28,7 @@ namespace BaksDev\Ozon\Support\Messenger\SendOzonMessageChat;
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Message\Post\Send\SendOzonChatMessageRequest;
+use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
@@ -67,13 +68,48 @@ final readonly class SendOzonMessageChatHandler
             ->forSupport($message->getId())
             ->execute();
 
+        if(false === $supportEvent)
+        {
+            $this->logger->critical(
+                'Ошибка получения события по идентификатору :'.$message->getId(),
+                [__FILE__.':'.__LINE__],
+            );
+
+            return;
+        }
+
         $supportEvent->getDto($supportDTO);
+
+        // проверяем тип профиля
+        $typeProfile = $supportDTO->getInvariable()->getType();
+
+        if(false === $typeProfile instanceof OzonSupportProfileType)
+        {
+            $this->logger->critical(
+                'Ожидаемый тип профиля: OzonSupportProfileType' . '| Текущий тип профиля: ' . $typeProfile::class,
+                [__FILE__.':'.__LINE__],
+            );
+
+            return;
+        }
 
         // ответы закрывают чат - реагируем на статус SupportStatusClose
         if($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose)
         {
             /** @var SupportMessageDTO $lastMessage */
             $lastMessage = $supportDTO->getMessages()->last();
+
+            // проверяем наличие внешнего ID - для наших ответов его быть не должно
+            if(null !== $lastMessage->getExternal())
+            {
+                $this->logger->critical(
+                    'Ответ на сообщение не должен иметь внешний (external) ID',
+                    [__FILE__.':'.__LINE__],
+                );
+
+                return;
+            }
+
             $lastMessageText = $lastMessage->getMessage();
 
             $externalChatId = $supportDTO->getInvariable()->getTicket();
