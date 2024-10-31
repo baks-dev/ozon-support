@@ -122,11 +122,10 @@ final class GetOzonCustomerMessageChatHandler
 
         /**
          * Фильтруем сообщения:
-         * - непрочитанные;
          * - кроме type seller;
          */
         $messagesChat = array_filter(iterator_to_array($messagesChat), function(OzonMessageChatDTO $message) {
-            return false === $message->isRead() && $message->getUserType() !== 'Seller';
+            return $message->getUserType() !== 'Seller';
         });
 
         if(empty($messagesChat))
