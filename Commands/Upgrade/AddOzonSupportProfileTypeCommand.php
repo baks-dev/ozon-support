@@ -139,7 +139,6 @@ final class AddOzonSupportProfileTypeCommand extends Command
                     $sectionFieldDTO->setType(new InputField('phone_field'));
                 }
 
-
                 /** @var SectionFieldTransDTO $sectionFieldTrans */
                 foreach($sectionFieldDTO->getTranslate() as $sectionFieldTrans)
                 {
