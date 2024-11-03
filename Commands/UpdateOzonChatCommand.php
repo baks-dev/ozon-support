@@ -28,7 +28,6 @@ use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\AllProfileToken\AllProfileOzonTokenInterface;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList\GetOzonChatListMessage;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -45,21 +44,19 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 final class UpdateOzonChatCommand extends Command
 {
-    private LoggerInterface $logger;
+    private SymfonyStyle $io;
 
     public function __construct(
-        LoggerInterface $ozonSupport,
         private readonly MessageDispatchInterface $messageDispatch,
         private readonly AllProfileOzonTokenInterface $allOzonTokens,
     )
     {
         parent::__construct();
-        $this->logger = $ozonSupport;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
+        $this->io = new SymfonyStyle($input, $output);
 
         $helper = $this->getHelper('profileQuestion');
 
@@ -68,31 +65,17 @@ final class UpdateOzonChatCommand extends Command
             ->onlyActiveToken()
             ->findAll();
 
-        if(false === $profiles->valid())
-        {
-            $this->logger->warning(
-                'Профили с активными токенами Ozon не найдены',
-                [__FILE__.':'.__LINE__],
-            );
-        }
-
         /** @var array<UserProfileUid> $profiles */
         $profiles = iterator_to_array($profiles);
 
-        if(count($profiles) > 1)
-        {
-            $questions[] = 'Все';
+        $helper = $this->getHelper('question');
 
-            /** @var UserProfileUid $profile */
-            foreach($profiles as $profile)
-            {
-                $questions[] = $profile->getAttr().' ( ID: '.(string) $profile.')';
-            }
-        }
-        else
+        $questions[] = 'Все';
+
+        /** @var UserProfileUid $profile */
+        foreach($profiles as $profile)
         {
-            $profile = current($profiles);
-            $questions[] = $profile->getAttr().' (ID: '.(string) $profile.')';
+            $questions[] = $profile->getAttr().' ( ID: '.(string) $profile.')';
         }
 
         /** Объявляем вопрос с вариантами ответов */
@@ -114,8 +97,25 @@ final class UpdateOzonChatCommand extends Command
         }
         else
         {
-            $this->update($profile);
+            $UserProfileUid = null;
+
+            foreach($profiles as $profile)
+            {
+                if($profile->getAttr() === $profileName)
+                {
+                    /* Присваиваем профиль пользователя */
+                    $UserProfileUid = $profile;
+                    break;
+                }
+            }
+
+            if($UserProfileUid)
+            {
+                $this->update($UserProfileUid);
+            }
         }
+
+        $this->io->success('Чаты успешно обновлены');
 
         return Command::SUCCESS;
     }
@@ -123,6 +123,8 @@ final class UpdateOzonChatCommand extends Command
 
     private function update(UserProfileUid|string $profile): void
     {
+        $this->io->note(sprintf('Обновляем профиль %s', $profile->getAttr()));
+
         $this->messageDispatch->dispatch(
             message: new GetOzonChatListMessage($profile),
         );
