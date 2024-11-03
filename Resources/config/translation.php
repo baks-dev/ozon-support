@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2023.  Baks.dev <admin@baks.dev>
+ *  Copyright 2024.  Baks.dev <admin@baks.dev>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -21,15 +21,15 @@
  *  THE SOFTWARE.
  */
 
-declare(strict_types=1);
+namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
-namespace BaksDev\Ozon\Support;
+use BaksDev\Ozon\Support\BaksDevOzonSupportBundle;
+use Symfony\Config\FrameworkConfig;
 
-use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+return static function(FrameworkConfig $config) {
 
-class BaksDevOzonSupportBundle extends AbstractBundle
-{
-    public const string NAMESPACE = __NAMESPACE__.'\\';
-
-    public const string PATH = __DIR__.DIRECTORY_SEPARATOR;
-}
+    $config
+        ->translator()
+        //        ->paths([BaksDevOzonSupportBundle::PATH.'Resources/translations/'])
+        ->paths([BaksDevOzonSupportBundle::PATH.implode(DIRECTORY_SEPARATOR, ['Resources', 'translations', ''])]);
+};

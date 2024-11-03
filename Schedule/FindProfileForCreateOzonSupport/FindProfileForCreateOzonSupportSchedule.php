@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2023.  Baks.dev <admin@baks.dev>
+ *  Copyright 2024.  Baks.dev <admin@baks.dev>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -23,13 +23,27 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support;
+namespace BaksDev\Ozon\Support\Schedule\FindProfileForCreateOzonSupport;
 
-use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+use BaksDev\Core\Schedule\ScheduleInterface;
+use DateInterval;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
-class BaksDevOzonSupportBundle extends AbstractBundle
+#[AutoconfigureTag('baks.schedule')]
+final class FindProfileForCreateOzonSupportSchedule implements ScheduleInterface
 {
-    public const string NAMESPACE = __NAMESPACE__.'\\';
+    /** Возвращает класс сообщение */
+    public function getMessage(): object
+    {
+        return new FindProfileForCreateOzonSupportMessage();
+    }
 
-    public const string PATH = __DIR__.DIRECTORY_SEPARATOR;
+    /**
+     * Интервал повтора
+     * @see https://www.php.net/manual/en/dateinterval.createfromdatestring.php
+     */
+    public function getInterval(): DateInterval
+    {
+        return DateInterval::createFromDateString('5 minutes');
+    }
 }

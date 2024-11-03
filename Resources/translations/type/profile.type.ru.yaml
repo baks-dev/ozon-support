@@ -1,0 +1,26 @@
+ozon:
+
+  support:
+
+    name: 'Ozon Support'
+    desc: 'Тип профиля Ozon Support'
+
+    section:
+
+      contact:
+        name: 'Контактные данные'
+        desc: 'Данные для связи менеджерами магазина с покупателем.'
+
+        field:
+
+          name:
+            name: 'Контактное лицо'
+            desc: 'ФИО пользователя'
+
+          phone:
+            name: 'Контактный телефон'
+            desc: 'Контактный телефон для связи'
+
+          email:
+            name: 'Контактный E-mail'
+            desc: 'Контактный E-mail для связи'

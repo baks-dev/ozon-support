@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2023.  Baks.dev <admin@baks.dev>
+ *  Copyright 2024.  Baks.dev <admin@baks.dev>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -19,17 +19,40 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
+ *
  */
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support;
+namespace BaksDev\Ozon\Support\Type;
 
-use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+use BaksDev\Users\Profile\TypeProfile\Type\Id\Choice\Collection\TypeProfileInterface;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
-class BaksDevOzonSupportBundle extends AbstractBundle
+#[AutoconfigureTag('baks.users.profile.type')]
+final class OzonSupportProfileType implements TypeProfileInterface
 {
-    public const string NAMESPACE = __NAMESPACE__.'\\';
+    public const string TYPE = '293d4645-7fb5-4b51-8132-593743937b65';
 
-    public const string PATH = __DIR__.DIRECTORY_SEPARATOR;
+    public function __toString(): string
+    {
+        return self::TYPE;
+    }
+
+    /** Возвращает значение (value) */
+    public function getValue(): string
+    {
+        return self::TYPE;
+    }
+
+    /** Сортировка */
+    public static function priority(): int
+    {
+        return 453;
+    }
+
+    public static function equals(mixed $uid): bool
+    {
+        return self::TYPE === (string) $uid;
+    }
 }
