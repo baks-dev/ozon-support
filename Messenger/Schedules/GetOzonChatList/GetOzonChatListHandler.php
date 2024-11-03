@@ -79,11 +79,6 @@ final readonly class GetOzonChatListHandler
         // если список чатов пустой
         if(false === $listChats->valid())
         {
-            $this->logger->warning(
-                'Не найдено чатов по выбранным фильтрам',
-                [__FILE__.':'.__LINE__],
-            );
-
             return;
         }
 

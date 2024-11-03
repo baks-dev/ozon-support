@@ -34,7 +34,6 @@ use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
-use DateInterval;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -102,17 +101,19 @@ final readonly class SendOzonMessageChatHandler
             // проверяем наличие внешнего ID - для наших ответов его быть не должно
             if(null !== $lastMessage->getExternal())
             {
-                $this->logger->critical(
-                    'Ответ на сообщение не должен иметь внешний (external) ID',
-                    [__FILE__.':'.__LINE__],
-                );
-
                 return;
             }
 
             $lastMessageText = $lastMessage->getMessage();
 
-            $externalChatId = $supportDTO->getInvariable()->getTicket();
+            $SupportInvariableDTO = $supportDTO->getInvariable();
+
+            if(is_null($SupportInvariableDTO))
+            {
+                return;
+            }
+
+            $externalChatId = $SupportInvariableDTO->getTicket();
 
             $result = $this->sendMessageRequest
                 ->chatId($externalChatId)
@@ -122,17 +123,17 @@ final readonly class SendOzonMessageChatHandler
             if(false === $result)
             {
                 $this->logger->warning(
-                    'Повтор выполнения сообщения через 10 минут',
+                    'Повтор выполнения сообщения через 5 минут',
                     [__FILE__.':'.__LINE__],
                 );
 
-                $profile = $supportDTO->getInvariable()->getProfile();
+                $profile = $SupportInvariableDTO->getProfile();
 
                 $this->messageDispatch
                     ->dispatch(
                         message: $message,
-                        // задержка 10 минут для отправки сообщение в существующий чат по его идентификатору
-                        stamps: [new MessageDelay(DateInterval::createFromDateString('10 minutes'))],
+                        // задержка 5 минут для отправки сообщение в существующий чат по его идентификатору
+                        stamps: [new MessageDelay('5 minutes')],
                         transport: (string) $profile,
                     );
             }

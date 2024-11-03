@@ -112,11 +112,6 @@ final class GetOzonCustomerMessageChatHandler
 
         if(false === $messagesChat->valid())
         {
-            $this->logger->warning(
-                'Не найдено сообщений по выбранным фильтрам',
-                [__FILE__.':'.__LINE__],
-            );
-
             return;
         }
 
@@ -221,6 +216,7 @@ final class GetOzonCustomerMessageChatHandler
                 $supportMessageDTO->setInMessage();
             }
 
+            // Если не возможно определить тип - присваиваем идентификатор чата в качестве имени
             if($chatMessage->getUserType() !== 'Customer' && $chatMessage->getUserType() !== 'Seller')
             {
                 $supportMessageDTO->setName($chatMessage->getUserId());
@@ -243,15 +239,12 @@ final class GetOzonCustomerMessageChatHandler
             if(false === $result instanceof Support)
             {
                 $this->logger->critical(
-                    sprintf(
-                        'ozon-support: Ошибка %s при создании/обновлении чата поддержки:
-                         Profile: %s | SupportEvent ID: %s | SupportEventInvariable.Ticker ID: %s',
-                        $result,
-                        (string) $profile,
-                        $supportDTO->getEvent(),
-                        $supportDTO->getInvariable()->getTicket(),
-                    ),
-                    [__FILE__.':'.__LINE__],
+                    sprintf('ozon-support: Ошибка %s при создании/обновлении чата поддержки', $result),
+                    [
+                        __FILE__.':'.__LINE__,
+                        $profile,
+                        $supportDTO->getInvariable()?->getTicket(),
+                    ],
                 );
             }
         }

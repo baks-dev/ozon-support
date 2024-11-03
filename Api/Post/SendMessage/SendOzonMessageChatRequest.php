@@ -1,17 +1,17 @@
 <?php
 /*
  *  Copyright 2024.  Baks.dev <admin@baks.dev>
- *
+ *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
  *  in the Software without restriction, including without limitation the rights
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is furnished
  *  to do so, subject to the following conditions:
- *
+ *  
  *  The above copyright notice and this permission notice shall be included in all
  *  copies or substantial portions of the Software.
- *
+ *  
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  *  FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Api\Post\SendMessage;
 
 use BaksDev\Ozon\Api\Ozon;
+use InvalidArgumentException;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
@@ -71,13 +72,13 @@ final class SendOzonMessageChatRequest extends Ozon
         // обязательно для передачи
         if(false === $this->chatId)
         {
-            throw new \InvalidArgumentException('Invalid argument exception chat');
+            throw new InvalidArgumentException('Invalid argument exception chat');
         }
 
         // обязательно для передачи
         if(false === $this->message)
         {
-            throw new \InvalidArgumentException('Invalid argument exception text');
+            throw new InvalidArgumentException('Invalid argument exception text');
         }
 
         $response = $this->TokenHttpClient()
@@ -92,13 +93,14 @@ final class SendOzonMessageChatRequest extends Ozon
                 ]
             );
 
-        if($responseCode = $response->getStatusCode() !== 200)
+        if($response->getStatusCode() !== 200)
         {
-            $error = $response->getContent(false);
+            $error = $response->toArray(false);
 
             $this->logger->critical(
-                sprintf('Ozon Seller API Error: Ошибка отправки сообщения в существующий чат по его идентификатору (Response Code: %s, INFO: %s)', (string) $responseCode, $error),
-                [__FILE__.':'.__LINE__]);
+                'ozon-support: Ошибка отправки сообщения в существующий чат по его идентификатору',
+                [__FILE__.':'.__LINE__, $error]
+            );
 
             return false;
         }

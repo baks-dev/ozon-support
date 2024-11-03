@@ -10,7 +10,7 @@
 # systemctl stop ozon-support@1.service
 
 [Unit]
-Description=Symfony messenger ozon-support %i
+Description=ozon-support
 StartLimitBurst=5
 StartLimitIntervalSec=0
 
