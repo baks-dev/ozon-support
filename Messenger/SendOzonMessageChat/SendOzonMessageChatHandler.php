@@ -84,11 +84,6 @@ final readonly class SendOzonMessageChatHandler
 
         if(false === $typeProfile->equals(OzonSupportProfileType::TYPE))
         {
-            $this->logger->critical(
-                'Идентификатор профиля не соответствует типу профиля: OzonSupportProfileType'.'| Переданный идентификатор: '.(string) $typeProfile,
-                [__FILE__.':'.__LINE__],
-            );
-
             return;
         }
 
@@ -140,4 +135,3 @@ final readonly class SendOzonMessageChatHandler
         }
     }
 }
-
