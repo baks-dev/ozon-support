@@ -122,7 +122,8 @@ final readonly class MarkReadingOzonMessageChatHandler
         {
             $this->messageDispatch->dispatch(
                 $message,
-                [new MessageDelay('1 minutes')]
+                [new MessageDelay('1 minutes')],
+                'ozon-support'
             );
         }
     }

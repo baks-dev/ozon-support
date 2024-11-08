@@ -37,13 +37,6 @@ use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-/**
- * При ответе на пользовательские сообщения:
- * - получаем текущее событие чата;
- * - проверяем статус чата - наши ответы закрывают чат - реагируем на статус SupportStatusClose;
- * - отправляем последнее добавленное сообщение - наш ответ;
- * - в случае ошибки OZON API повторяем текущий процесс через интервал времени.
- */
 #[AsMessageHandler]
 final readonly class SendOzonMessageChatHandler
 {
@@ -59,6 +52,14 @@ final readonly class SendOzonMessageChatHandler
         $this->logger = $ozonSupport;
     }
 
+
+    /**
+     * При ответе на пользовательские сообщения:
+     * - получаем текущее событие чата;
+     * - проверяем статус чата - наши ответы закрывают чат - реагируем на статус SupportStatusClose;
+     * - отправляем последнее добавленное сообщение - наш ответ;
+     * - в случае ошибки OZON API повторяем текущий процесс через интервал времени.
+     */
     public function __invoke(SupportMessage $message): void
     {
         $supportDTO = new SupportDTO();
@@ -79,8 +80,15 @@ final readonly class SendOzonMessageChatHandler
 
         $supportEvent->getDto($supportDTO);
 
+        $SupportInvariableDTO = $supportDTO->getInvariable();
+
+        if(is_null($SupportInvariableDTO))
+        {
+            return;
+        }
+
         // проверяем тип профиля
-        $typeProfile = $supportDTO->getInvariable()->getType();
+        $typeProfile = $SupportInvariableDTO->getType();
 
         if(false === $typeProfile->equals(OzonSupportProfileType::TYPE))
         {
@@ -101,13 +109,6 @@ final readonly class SendOzonMessageChatHandler
 
             $lastMessageText = $lastMessage->getMessage();
 
-            $SupportInvariableDTO = $supportDTO->getInvariable();
-
-            if(is_null($SupportInvariableDTO))
-            {
-                return;
-            }
-
             $externalChatId = $SupportInvariableDTO->getTicket();
 
             $result = $this->sendMessageRequest
@@ -118,18 +119,16 @@ final readonly class SendOzonMessageChatHandler
             if(false === $result)
             {
                 $this->logger->warning(
-                    'Повтор выполнения сообщения через 5 минут',
+                    'Повтор выполнения сообщения через 1 минут',
                     [__FILE__.':'.__LINE__],
                 );
-
-                $profile = $SupportInvariableDTO->getProfile();
 
                 $this->messageDispatch
                     ->dispatch(
                         message: $message,
-                        // задержка 5 минут для отправки сообщение в существующий чат по его идентификатору
-                        stamps: [new MessageDelay('5 minutes')],
-                        transport: (string) $profile,
+                        // задержка 1 минуту для отправки сообщение в существующий чат по его идентификатору
+                        stamps: [new MessageDelay('1 minutes')],
+                        transport: 'ozon-support',
                     );
             }
         }
