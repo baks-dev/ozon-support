@@ -58,8 +58,6 @@ final class UpdateOzonChatCommand extends Command
     {
         $this->io = new SymfonyStyle($input, $output);
 
-        $helper = $this->getHelper('profileQuestion');
-
         /** Идентификаторы профилей пользователей, у которых есть активный токен Ozon */
         $profiles = $this->allOzonTokens
             ->onlyActiveToken()
