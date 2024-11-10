@@ -76,6 +76,9 @@ final class AddOzonSupportProfileTypeCommand extends Command
             $typeProfileDTO->setSort(OzonSupportProfileType::priority());
             $typeProfileDTO->setProfile($TypeProfileUid);
 
+            $TypeProfileInfoDTO = $typeProfileDTO->getInfo();
+            $TypeProfileInfoDTO->setActive(false);
+
             $typeProfileTranslateDTO = $typeProfileDTO->getTranslate();
 
             /**
