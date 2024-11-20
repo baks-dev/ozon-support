@@ -2,12 +2,12 @@
 
 # systemctl daemon-reload
 
-# systemctl enable ozon-support@1.service
-# systemctl disable ozon-support@1.service
+# systemctl enable baks-ozon-support@1.service
+# systemctl disable baks-ozon-support@1.service
 
-# systemctl start ozon-support@1.service
-# systemctl restart ozon-support@1.service
-# systemctl stop ozon-support@1.service
+# systemctl start baks-ozon-support@1.service
+# systemctl restart baks-ozon-support@1.service
+# systemctl stop baks-ozon-support@1.service
 
 [Unit]
 Description=ozon-support
