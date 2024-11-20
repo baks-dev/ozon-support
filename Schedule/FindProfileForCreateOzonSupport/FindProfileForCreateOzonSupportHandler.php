@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Schedule\FindProfileForCreateOzonSupport;
 
+use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\AllProfileToken\AllProfileOzonTokenInterface;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList\GetOzonChatListMessage;
@@ -74,6 +75,7 @@ final readonly class FindProfileForCreateOzonSupportHandler
         {
             $this->messageDispatch->dispatch(
                 message: new GetOzonChatListMessage($profile),
+                stamps: [new MessageDelay('5 seconds')],
                 transport: (string) $profile,
             );
         }

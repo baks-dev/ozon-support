@@ -19,7 +19,6 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
- *
  */
 
 declare(strict_types=1);
@@ -29,6 +28,7 @@ namespace BaksDev\Ozon\Support\Controller\Admin;
 use BaksDev\Core\Controller\AbstractController;
 use BaksDev\Core\Listeners\Event\Security\RoleSecurity;
 use BaksDev\Ozon\Support\Api\Get\ChatFile\GetOzonFileChatRequest;
+use DomainException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Attribute\AsController;
@@ -50,7 +50,7 @@ final class FileController extends AbstractController
     {
         $fileInfo = pathinfo($file);
 
-        $profile = $this->getCurrentProfileUid();
+        $profile = $this->getProfileUid();
 
         $content = $getOzonLinkRequest
             ->profile($profile)
@@ -58,7 +58,7 @@ final class FileController extends AbstractController
 
         if(false === $content)
         {
-            throw new \DomainException('Просмотр данного файла не доступен.');
+            throw new DomainException('Просмотр данного файла не доступен.');
         }
 
         $response = new StreamedResponse(

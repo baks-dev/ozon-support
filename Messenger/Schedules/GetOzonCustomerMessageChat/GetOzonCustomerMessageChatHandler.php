@@ -33,7 +33,7 @@ use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\SupportCurrentEventByTicket\CurrentSupportEventByTicketInterface;
 use BaksDev\Support\Type\Priority\SupportPriority;
-use BaksDev\Support\Type\Priority\SupportPriority\Collection\SupportPriorityHeight;
+use BaksDev\Support\Type\Priority\SupportPriority\Collection\SupportPriorityLow;
 use BaksDev\Support\Type\Status\SupportStatus;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusOpen;
 use BaksDev\Support\UseCase\Admin\New\Invariable\SupportInvariableDTO;
@@ -76,8 +76,8 @@ final class GetOzonCustomerMessageChatHandler
         /** DTO для SupportEvent */
         $supportDTO = new SupportDTO();
 
-        $supportDTO->setPriority(new SupportPriority(SupportPriorityHeight::PARAM)); // CustomerMessage - высокий приоритет
-        $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM)); // Для нового сообщения - StatusOpen
+        $supportDTO->setPriority(new SupportPriority(SupportPriorityLow::class)); // CustomerMessage - высокий приоритет
+        $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::class)); // Для нового сообщения - StatusOpen
 
         /** DTO для SupportInvariable */
         $supportInvariableDTO = new SupportInvariableDTO();

@@ -109,9 +109,11 @@ final readonly class SendOzonMessageChatHandler
 
             $lastMessageText = $lastMessage->getMessage();
 
+            $UserProfileUid = $SupportInvariableDTO->getProfile();
             $externalChatId = $SupportInvariableDTO->getTicket();
 
             $result = $this->sendMessageRequest
+                ->profile($UserProfileUid)
                 ->chatId($externalChatId)
                 ->message($lastMessageText)
                 ->sendMessage();
