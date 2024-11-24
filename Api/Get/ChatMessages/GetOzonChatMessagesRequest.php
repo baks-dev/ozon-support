@@ -23,7 +23,7 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Get\ChatHistory;
+namespace BaksDev\Ozon\Support\Api\Get\ChatMessages;
 
 use BaksDev\Ozon\Api\Ozon;
 use Generator;
@@ -32,7 +32,7 @@ use InvalidArgumentException;
 /**
  * Возвращает историю сообщений чата.
  */
-final class GetOzonChatHistoryRequest extends Ozon
+final class GetOzonChatMessagesRequest extends Ozon
 {
     /**
      * Идентификатор чата.
@@ -109,11 +109,12 @@ final class GetOzonChatHistoryRequest extends Ozon
 
     /**
      * Список сообщений чата
+     *
      * @see https://docs.ozon.ru/api/seller/#operation/ChatAPI_ChatHistoryV2
      *
      * @return Generator<int, OzonMessageChatDTO>
      */
-    public function getMessages(): Generator|false
+    public function findAll(): Generator|false
     {
         // обязательно для передачи
         if(false === $this->chat)

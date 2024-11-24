@@ -23,7 +23,7 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Get\ChatHistory;
+namespace BaksDev\Ozon\Support\Api\Get\ChatMessages;
 
 use DateTimeImmutable;
 use DateTimeZone;
@@ -60,22 +60,30 @@ final readonly class OzonMessageChatDTO
 
         $moscowTimezone = new DateTimeZone(date_default_timezone_get());
         $this->created = (new DateTimeImmutable($data['created_at']))->setTimezone($moscowTimezone);
-        
-        $data = $data['data'];
 
-        // Если в массиве дата больше одного значения - это сообщение-возврат. Первый элемент массива - номер возврата
-        if(count($data) > 1)
+        $message = $data['data'];
+        $current = current(['data']);
+
+        // сообщение-возврат
+        if(stripos($current, '-R') !== false)
         {
-            $this->data = $data[1];
-            $this->refundTitle = $data[0];
+            $this->data = $message[1];
+            $this->refundTitle = $message[0];
+            return;
         }
 
-        // если в массиве один элемент - это сообщение-вопрос
-        if(count($data) === 1)
+        // сообщение-изображение
+        if(str_starts_with($current, '!'))
         {
             $this->refundTitle = null;
-            $this->data = current($data);
+            $this->data = current($message);
+            return;
         }
+
+        $this->refundTitle = null;
+        $message = implode(PHP_EOL, str_replace(['  ', PHP_EOL], ' ', $message));
+        $this->data = str_replace('  ', ' ', $message);
+
     }
 
     /** Идентификатор сообщения. */

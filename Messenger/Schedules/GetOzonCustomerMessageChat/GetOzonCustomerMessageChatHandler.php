@@ -26,8 +26,8 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
-use BaksDev\Ozon\Support\Api\Get\ChatHistory\GetOzonChatHistoryRequest;
-use BaksDev\Ozon\Support\Api\Get\ChatHistory\OzonMessageChatDTO;
+use BaksDev\Ozon\Support\Api\Get\ChatMessages\GetOzonChatMessagesRequest;
+use BaksDev\Ozon\Support\Api\Get\ChatMessages\OzonMessageChatDTO;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
 use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Entity\Support;
@@ -55,7 +55,7 @@ final class GetOzonCustomerMessageChatHandler
     public function __construct(
         LoggerInterface $ozonSupport,
         private readonly DeduplicatorInterface $deduplicator,
-        private readonly GetOzonChatHistoryRequest $chatHistoryRequest,
+        private readonly GetOzonChatMessagesRequest $chatHistoryRequest,
         private readonly CurrentSupportEventByTicketInterface $supportByOzonChat,
         private readonly SupportHandler $supportHandler,
     )
@@ -103,7 +103,7 @@ final class GetOzonCustomerMessageChatHandler
             ->chatId($ticket)
             ->sortByNew()
             ->limit(50)
-            ->getMessages();
+            ->findAll();
 
         if(false === $messagesChat)
         {

@@ -23,10 +23,10 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Get\ChatHistory\Tests;
+namespace BaksDev\Ozon\Support\Api\Get\ChatMessages\Tests;
 
-use BaksDev\Ozon\Support\Api\Get\ChatHistory\GetOzonChatHistoryRequest;
-use BaksDev\Ozon\Support\Api\Get\ChatHistory\OzonMessageChatDTO;
+use BaksDev\Ozon\Support\Api\Get\ChatMessages\GetOzonChatMessagesRequest;
+use BaksDev\Ozon\Support\Api\Get\ChatMessages\OzonMessageChatDTO;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use DateTimeImmutable;
@@ -38,7 +38,7 @@ use Symfony\Component\DependencyInjection\Attribute\When;
  * @group ozon-support-api
  */
 #[When(env: 'test')]
-class GetOzonChatHistoryRequestTest extends KernelTestCase
+class GetOzonChatMessagesRequestTest extends KernelTestCase
 {
     private static OzonAuthorizationToken $Authorization;
 
@@ -54,20 +54,19 @@ class GetOzonChatHistoryRequestTest extends KernelTestCase
 
     public function testRequest(): void
     {
-
         self::assertTrue(true);
         return;
 
-        /** @var GetOzonChatHistoryRequest $ozonChatHistoryRequest */
-        $ozonChatHistoryRequest = self::getContainer()->get(GetOzonChatHistoryRequest::class);
+        /** @var GetOzonChatMessagesRequest $ozonChatHistoryRequest */
+        $ozonChatHistoryRequest = self::getContainer()->get(GetOzonChatMessagesRequest::class);
         $ozonChatHistoryRequest->TokenHttpClient(self::$Authorization);
 
         $messages = $ozonChatHistoryRequest
             ->chatId('id')
             ->limit(1000)
-            ->getMessages();
+            ->findAll();
 
-        //        dd(iterator_to_array($messages));
+        // dd(iterator_to_array($messages));
 
         self::assertNotFalse($messages);
 
