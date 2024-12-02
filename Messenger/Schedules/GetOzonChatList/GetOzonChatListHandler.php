@@ -28,8 +28,7 @@ namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Get\ChatList\GetOzonChatListRequest;
 use BaksDev\Ozon\Support\Api\Get\ChatList\OzonChatDTO;
-use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat\GetOzonCustomerMessageChatMessage;
-use Psr\Log\LoggerInterface;
+use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatMessages\GetOzonCustomerMessageChatMessage;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
@@ -44,16 +43,10 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final readonly class GetOzonChatListHandler
 {
-    private LoggerInterface $logger;
-
     public function __construct(
-        LoggerInterface $ozonSupport,
         private MessageDispatchInterface $messageDispatch,
         private GetOzonChatListRequest $ozonChatListRequest,
-    )
-    {
-        $this->logger = $ozonSupport;
-    }
+    ) {}
 
     public function __invoke(GetOzonChatListMessage $message): void
     {

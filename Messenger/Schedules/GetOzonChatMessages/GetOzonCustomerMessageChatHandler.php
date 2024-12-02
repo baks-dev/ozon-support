@@ -23,7 +23,7 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat;
+namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatMessages;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Ozon\Support\Api\Get\ChatMessages\GetOzonChatMessagesRequest;

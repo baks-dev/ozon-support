@@ -19,11 +19,46 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
- *
  */
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Schedule\FindProfileForCreateOzonSupport;
+namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatMessages;
 
-final class FindProfileForCreateOzonSupportMessage { }
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
+
+final class GetOzonCustomerMessageChatMessage
+{
+
+    /**
+     * Идентификатор чата на Ozon
+     */
+    private string $chatId;
+
+    /**
+     * Идентификатор профиля пользователя
+     */
+    private UserProfileUid $profile;
+
+    public function __construct(string $chatId, UserProfileUid|string $profile)
+    {
+        if(is_string($profile))
+        {
+            $profile = new UserProfileUid($profile);
+        }
+
+        $this->profile = $profile;
+
+        $this->chatId = $chatId;
+    }
+
+    public function getChatId(): string
+    {
+        return $this->chatId;
+    }
+
+    public function getProfile(): UserProfileUid
+    {
+        return $this->profile;
+    }
+}

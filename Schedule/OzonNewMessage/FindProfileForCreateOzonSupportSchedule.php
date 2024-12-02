@@ -19,47 +19,31 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
- *
  */
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonCustomerMessageChat;
+namespace BaksDev\Ozon\Support\Schedule\OzonNewMessage;
 
-use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
+use BaksDev\Core\Schedule\ScheduleInterface;
+use DateInterval;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
-final class GetOzonCustomerMessageChatMessage
+#[AutoconfigureTag('baks.schedule')]
+final class FindProfileForCreateOzonSupportSchedule implements ScheduleInterface
 {
-
-    /**
-     * Идентификатор чата на Ozon
-     */
-    private string $chatId;
-
-    /**
-     * Идентификатор профиля пользователя
-     */
-    private UserProfileUid $profile;
-
-    public function __construct(string $chatId, UserProfileUid|string $profile)
+    /** Возвращает класс сообщение */
+    public function getMessage(): object
     {
-        if(is_string($profile))
-        {
-            $profile = new UserProfileUid($profile);
-        }
-
-        $this->profile = $profile;
-
-        $this->chatId = $chatId;
+        return new FindProfileForCreateOzonSupportMessage();
     }
 
-    public function getChatId(): string
+    /**
+     * Интервал повтора
+     * @see https://www.php.net/manual/en/dateinterval.createfromdatestring.php
+     */
+    public function getInterval(): DateInterval
     {
-        return $this->chatId;
-    }
-
-    public function getProfile(): UserProfileUid
-    {
-        return $this->profile;
+        return DateInterval::createFromDateString('5 minutes');
     }
 }

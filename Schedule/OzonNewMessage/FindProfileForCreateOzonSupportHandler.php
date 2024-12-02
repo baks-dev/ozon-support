@@ -23,7 +23,7 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Schedule\FindProfileForCreateOzonSupport;
+namespace BaksDev\Ozon\Support\Schedule\OzonNewMessage;
 
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;

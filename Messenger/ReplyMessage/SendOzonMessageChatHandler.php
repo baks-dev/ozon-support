@@ -23,43 +23,42 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Messenger\MarkOzonMessageChatReading;
+namespace BaksDev\Ozon\Support\Messenger\ReplyMessage;
 
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
-use BaksDev\Ozon\Support\Api\Post\MarkReading\MarkReadingOzonMessageChatRequest;
+use BaksDev\Ozon\Support\Api\Post\SendMessage\SendOzonMessageChatRequest;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
+use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-/**
- * При добавлении новых сообщений в чат:
- * - получаем текущее событие чата;
- * - получаем последнее добавленное сообщение;
- * - отправляем запрос на прочтение всех сообщений, после последнего добавленного сообщения
- * - в случае ошибки OZON API повторяем текущий процесс через интервал времени
- */
 #[AsMessageHandler]
-final readonly class MarkReadingOzonMessageChatHandler
+final readonly class SendOzonMessageChatHandler
 {
     private LoggerInterface $logger;
 
     public function __construct(
         LoggerInterface $ozonSupport,
+        private MessageDispatchInterface $messageDispatch,
         private CurrentSupportEventRepository $currentSupportEvent,
-        private MarkReadingOzonMessageChatRequest $markReadingOzonMessageChatRequest,
-        private MessageDispatchInterface $messageDispatch
+        private SendOzonMessageChatRequest $sendMessageRequest,
     )
     {
         $this->logger = $ozonSupport;
     }
 
+
     /**
-     * Делаем прочитанным чат с сообщениями
+     * При ответе на пользовательские сообщения:
+     * - получаем текущее событие чата;
+     * - проверяем статус чата - наши ответы закрывают чат - реагируем на статус SupportStatusClose;
+     * - отправляем последнее добавленное сообщение - наш ответ;
+     * - в случае ошибки OZON API повторяем текущий процесс через интервал времени.
      */
     public function __invoke(SupportMessage $message): void
     {
@@ -72,7 +71,7 @@ final readonly class MarkReadingOzonMessageChatHandler
         if(false === $supportEvent)
         {
             $this->logger->critical(
-                sprintf('Ошибка получения события по идентификатору : %s', $message->getId()),
+                'Ошибка получения события по идентификатору :'.$message->getId(),
                 [__FILE__.':'.__LINE__],
             );
 
@@ -80,21 +79,13 @@ final readonly class MarkReadingOzonMessageChatHandler
         }
 
         $supportEvent->getDto($supportDTO);
+
         $SupportInvariableDTO = $supportDTO->getInvariable();
 
-        /** Если событие изменилось - Invariable равен null  */
         if(is_null($SupportInvariableDTO))
         {
-            $this->logger->warning(
-                sprintf('Ошибка получения Invariable события по идентификатору : %s', $message->getId()),
-                [__FILE__.':'.__LINE__],
-            );
-
             return;
         }
-
-        /** @var SupportMessageDTO $lastMessage */
-        $lastMessage = $supportDTO->getMessages()->last();
 
         // проверяем тип профиля
         $typeProfile = $SupportInvariableDTO->getType();
@@ -104,28 +95,44 @@ final readonly class MarkReadingOzonMessageChatHandler
             return;
         }
 
-        // проверяем наличие внешнего ID - обязательно для сообщений, поступающий от Ozon API
-        if(null === $lastMessage->getExternal())
+        // ответы закрывают чат - реагируем на статус SupportStatusClose
+        if($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose)
         {
-            return;
-        }
+            /** @var SupportMessageDTO $lastMessage */
+            $lastMessage = $supportDTO->getMessages()->last();
 
-        $lastMessageId = (int) $lastMessage->getExternal();
+            // проверяем наличие внешнего ID - для наших ответов его быть не должно
+            if(null !== $lastMessage->getExternal())
+            {
+                return;
+            }
 
-        // отправляем запрос на прочтение
-        $result = $this->markReadingOzonMessageChatRequest
-            ->chatId($SupportInvariableDTO->getTicket())
-            ->fromMessage($lastMessageId)
-            ->markReading();
+            $lastMessageText = $lastMessage->getMessage();
 
-        if(false === $result)
-        {
-            $this->messageDispatch->dispatch(
-                $message,
-                [new MessageDelay('1 minutes')],
-                'ozon-support'
-            );
+            $UserProfileUid = $SupportInvariableDTO->getProfile();
+            $externalChatId = $SupportInvariableDTO->getTicket();
+
+            $result = $this->sendMessageRequest
+                ->profile($UserProfileUid)
+                ->chatId($externalChatId)
+                ->message($lastMessageText)
+                ->sendMessage();
+
+            if(false === $result)
+            {
+                $this->logger->warning(
+                    'Повтор выполнения сообщения через 1 минут',
+                    [__FILE__.':'.__LINE__],
+                );
+
+                $this->messageDispatch
+                    ->dispatch(
+                        message: $message,
+                        // задержка 1 минуту для отправки сообщение в существующий чат по его идентификатору
+                        stamps: [new MessageDelay('1 minutes')],
+                        transport: 'ozon-support',
+                    );
+            }
         }
     }
 }
-
