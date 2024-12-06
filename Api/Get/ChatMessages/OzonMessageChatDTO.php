@@ -155,7 +155,8 @@ final readonly class OzonMessageChatDTO
         }
 
         // ищем ссылку в фигурных скобках. Формат для ссылок - [текст](ссылка)
-        preg_match('~\(\K.+?(?=\))~', $this->data, $linkMatches);
+        //preg_match('~\(\K.+?(?=\))~', $this->data, $linkMatches);
+        preg_match('/\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/', $this->data, $linkMatches);
 
         if(false === empty($linkMatches))
         {
