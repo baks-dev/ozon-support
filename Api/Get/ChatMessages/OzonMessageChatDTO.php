@@ -139,8 +139,10 @@ final readonly class OzonMessageChatDTO
 
                 $pathInfo = pathinfo($apiLink);
 
-                /** @see FileController */
-                $url = '/admin/ozon-support/files/'.$pathInfo['basename'];
+                /**
+                 * @see FileController
+                 */
+                $url = '/admin/ozon-support/files/'.$pathInfo['basename'].'/info';
 
                 // миниатюра картинки
                 $miniature = sprintf('<img src="%s" width="200" height="auto">', $url);

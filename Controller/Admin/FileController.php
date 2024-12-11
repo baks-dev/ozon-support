@@ -38,8 +38,12 @@ use Symfony\Component\Routing\Annotation\Route;
 #[RoleSecurity('ROLE_SUPPORT')]
 final class FileController extends AbstractController
 {
+    /**
+     * При изменении ссылки ссылку в OzonMessageChatDTO
+     * @see OzonMessageChatDTO:145
+     */
     #[Route(
-        path: '/admin/ozon-support/files/{file}',
+        path: '/admin/ozon-support/files/{file}/info',
         name: 'admin.ozon.support.files',
         methods: ['GET'],
     )]
