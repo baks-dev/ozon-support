@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -43,25 +43,21 @@ use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
 use DateInterval;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
 final class GetOzonCustomerMessageChatHandler
 {
-    private LoggerInterface $logger;
-
     private bool $isAddMessage = false;
 
     public function __construct(
-        LoggerInterface $ozonSupport,
+        #[Target('ozonSupportLogger')] private readonly LoggerInterface $logger,
         private readonly DeduplicatorInterface $deduplicator,
         private readonly GetOzonChatMessagesRequest $chatHistoryRequest,
         private readonly CurrentSupportEventByTicketInterface $supportByOzonChat,
         private readonly SupportHandler $supportHandler,
-    )
-    {
-        $this->logger = $ozonSupport;
-    }
+    ) {}
 
     public function __invoke(GetOzonCustomerMessageChatMessage $message): void
     {

@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@ use BaksDev\Ozon\Repository\AllProfileToken\AllProfileOzonTokenInterface;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList\GetOzonChatListMessage;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
@@ -42,16 +43,12 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final readonly class FindProfileForCreateOzonSupportHandler
 {
-    private LoggerInterface $logger;
 
     public function __construct(
-        LoggerInterface $ozonSupport,
+        #[Target('ozonSupportLogger')] private LoggerInterface $logger,
         private MessageDispatchInterface $messageDispatch,
         private AllProfileOzonTokenInterface $allOzonTokens,
-    )
-    {
-        $this->logger = $ozonSupport;
-    }
+    ) {}
 
     public function __invoke(FindProfileForCreateOzonSupportMessage $message): void
     {
