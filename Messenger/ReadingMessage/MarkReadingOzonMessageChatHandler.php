@@ -69,7 +69,7 @@ final readonly class MarkReadingOzonMessageChatHandler
         {
             $this->logger->critical(
                 sprintf('Ошибка получения события по идентификатору : %s', $message->getId()),
-                [__FILE__.':'.__LINE__],
+                [self::class.':'.__LINE__],
             );
 
             return;
@@ -83,7 +83,7 @@ final readonly class MarkReadingOzonMessageChatHandler
         {
             $this->logger->warning(
                 sprintf('Ошибка получения Invariable события по идентификатору : %s', $message->getId()),
-                [__FILE__.':'.__LINE__],
+                [self::class.':'.__LINE__],
             );
 
             return;

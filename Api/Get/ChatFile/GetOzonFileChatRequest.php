@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@ final class GetOzonFileChatRequest extends Ozon
             $this->logger->critical(
                 sprintf('ozon-support: Ошибка получения контента, прикрепленного пользователем от Ozon Seller API (FILENAME: %s)', $file),
                 [
-                    __FILE__.':'.__LINE__,
+                    self::class.':'.__LINE__,
                     $content
                 ]);
 

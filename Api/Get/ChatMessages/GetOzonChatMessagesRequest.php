@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -122,18 +122,18 @@ final class GetOzonChatMessagesRequest extends Ozon
             throw new InvalidArgumentException('Invalid argument $chat');
         }
 
+        $json = [
+            "chat_id" => $this->chat,
+            "direction" => $this->sort,
+            "from_message_id" => $this->fromMessage,
+            "limit" => $this->limit
+        ];
+
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',
                 '/v2/chat/history',
-                [
-                    "json" => [
-                        "chat_id" => $this->chat,
-                        "direction" => $this->sort,
-                        "from_message_id" => $this->fromMessage,
-                        "limit" => $this->limit
-                    ]
-                ]
+                ["json" => $json]
             );
 
         $content = $response->toArray(false);
@@ -141,9 +141,10 @@ final class GetOzonChatMessagesRequest extends Ozon
         if($response->getStatusCode() !== 200)
         {
             $this->logger->critical(
-                sprintf('ozon-support: Ошибка получения истории чата от Ozon Seller API '),
+                sprintf('ozon-support: Ошибка получения истории чата от Ozon Seller API'),
                 [
-                    __FILE__.':'.__LINE__,
+                    self::class.':'.__LINE__,
+                    $json,
                     $content
                 ]);
 

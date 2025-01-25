@@ -70,7 +70,7 @@ final class GetOzonCustomerMessageChatHandler
         {
             $this->logger->critical(
                 'Не добавлен тип профиля Ozon Support. Добавьте OzonSupportProfileType запустив соответствую команду',
-                [__FILE__.':'.__LINE__],
+                [self::class.':'.__LINE__],
             );
 
             return;
@@ -112,11 +112,8 @@ final class GetOzonCustomerMessageChatHandler
             ->forTicket($ticket)
             ->find();
 
-        if($support instanceof SupportEvent)
-        {
-            /** Пересохраняю событие с новыми данными */
-            $support->getDto($supportDTO);
-        }
+        /** Пересохраняю событие с новыми данными */
+        !($support instanceof SupportEvent) ?: $support->getDto($supportDTO);
 
         /** Устанавливаем заголовок чата - выполнится только один раз при сохранении чата */
         if(false === $support)
@@ -154,12 +151,6 @@ final class GetOzonCustomerMessageChatHandler
             if(null !== $refund)
             {
                 $title = 'Возврат № '.$refund;
-            }
-
-            // если ничего не найдено - по умолчанию
-            if(null === $title)
-            {
-                $title = 'OZON';
             }
 
             $supportInvariableDTO->setTitle($title);
@@ -208,10 +199,9 @@ final class GetOzonCustomerMessageChatHandler
                 $supportMessageDTO->setInMessage();
             }
 
-            $supportDTO->addMessage($supportMessageDTO);
-
             // при добавлении нового сообщения открываем чат заново
-            $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM));
+            $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::class));
+            $supportDTO->addMessage($supportMessageDTO);
 
             $this->isAddMessage ?: $this->isAddMessage = true;
             $deduplicator->save();
@@ -227,7 +217,7 @@ final class GetOzonCustomerMessageChatHandler
                 $this->logger->critical(
                     sprintf('ozon-support: Ошибка %s при создании/обновлении чата поддержки', $handle),
                     [
-                        __FILE__.':'.__LINE__,
+                        self::class.':'.__LINE__,
                         $profile,
                         $supportDTO->getInvariable()?->getTicket(),
                     ],

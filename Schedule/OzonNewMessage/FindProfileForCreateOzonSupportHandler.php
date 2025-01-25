@@ -61,7 +61,7 @@ final readonly class FindProfileForCreateOzonSupportHandler
         {
             $this->logger->warning(
                 'Профили с активными токенами Ozon не найдены',
-                [__FILE__.':'.__LINE__],
+                [self::class.':'.__LINE__],
             );
 
             return;

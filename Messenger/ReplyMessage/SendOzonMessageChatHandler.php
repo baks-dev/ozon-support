@@ -67,7 +67,7 @@ final readonly class SendOzonMessageChatHandler
         {
             $this->logger->critical(
                 'Ошибка получения события по идентификатору :'.$message->getId(),
-                [__FILE__.':'.__LINE__],
+                [self::class.':'.__LINE__],
             );
 
             return;
@@ -117,7 +117,7 @@ final readonly class SendOzonMessageChatHandler
             {
                 $this->logger->warning(
                     'Повтор выполнения сообщения через 1 минут',
-                    [__FILE__.':'.__LINE__],
+                    [self::class.':'.__LINE__],
                 );
 
                 $this->messageDispatch
