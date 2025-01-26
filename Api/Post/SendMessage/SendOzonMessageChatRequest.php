@@ -81,16 +81,16 @@ final class SendOzonMessageChatRequest extends Ozon
             throw new InvalidArgumentException('Invalid argument exception text');
         }
 
+        $json = [
+            'chat_id' => $this->chatId,
+            'text' => $this->message,
+        ];
+
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',
                 '/v1/chat/send/message',
-                [
-                    "json" => [
-                        'chat_id' => $this->chatId,
-                        'text' => $this->message,
-                    ]
-                ]
+                ["json" => $json]
             );
 
         if($response->getStatusCode() !== 200)
@@ -99,7 +99,7 @@ final class SendOzonMessageChatRequest extends Ozon
 
             $this->logger->critical(
                 'ozon-support: Ошибка отправки сообщения в существующий чат по его идентификатору',
-                [self::class.':'.__LINE__, $error]
+                [self::class.':'.__LINE__, $error, $json]
             );
 
             return false;

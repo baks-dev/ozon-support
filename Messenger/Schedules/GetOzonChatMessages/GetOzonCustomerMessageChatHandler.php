@@ -66,16 +66,6 @@ final class GetOzonCustomerMessageChatHandler
 
     public function __invoke(GetOzonCustomerMessageChatMessage $message): void
     {
-        if(false === class_exists(OzonSupportProfileType::class))
-        {
-            $this->logger->critical(
-                'Не добавлен тип профиля Ozon Support. Добавьте OzonSupportProfileType запустив соответствую команду',
-                [self::class.':'.__LINE__],
-            );
-
-            return;
-        }
-
         $ticket = $message->getChatId();
         $profile = $message->getProfile();
 

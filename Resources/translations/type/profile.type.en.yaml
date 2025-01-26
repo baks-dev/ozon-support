@@ -24,3 +24,8 @@ ozon:
           email:
             name: 'Contact Email'
             desc: 'Contact Email'
+
+  question:
+
+    name: 'Ozon Вопрос'
+    desc: 'Тип профиля Ozon Вопрос'
