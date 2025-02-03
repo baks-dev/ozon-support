@@ -140,7 +140,7 @@ final class OzonQuestionHandler
             $article = false;
 
             // Используем регулярное выражение для извлечения текста до и внутри круглых скобок
-            preg_match('/^(.*?)s*\((.*?)\)$/', $title, $matches);
+            preg_match('/^(.*?)s*\((.*?)\)$/', (string) $title, $matches);
 
             if(count($matches) === 3)
             {
