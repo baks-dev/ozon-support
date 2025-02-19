@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,8 @@ use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatMessages\GetOzonCustomer
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
+ * Получает новые сообщения Ozon
+ *
  * Получаем профиль пользователя с активным токеном на Ozon:
  *
  * - делаем запрос на получение списка чатов: открытые и с непрочитанными сообщениями
@@ -41,7 +43,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * - создаем/обновляем чат техподдержки (Support)
  */
 #[AsMessageHandler]
-final readonly class GetOzonChatListHandler
+final readonly class GetOzonChatListDispatcher
 {
     public function __construct(
         private MessageDispatchInterface $messageDispatch,

@@ -47,8 +47,11 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+/**
+ * Добавляет новые вопросы Ozon
+ */
 #[AsMessageHandler(priority: 0)]
-final class OzonQuestionHandler
+final class OzonQuestionDispatcher
 {
     public function __construct(
         #[Target('ozonSupportLogger')] private LoggerInterface $logger,
@@ -63,9 +66,7 @@ final class OzonQuestionHandler
         $this->deduplicator->namespace('ozon-support');
     }
 
-    /**
-     * Метод добавляет новые вопросы
-     */
+
     public function __invoke(OzonQuestionMessage $message): void
     {
         /**

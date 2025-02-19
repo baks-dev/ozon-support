@@ -46,8 +46,11 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+/**
+ * Получает новые сообщения Ozon
+ */
 #[AsMessageHandler]
-final class GetOzonCustomerMessageChatHandler
+final class GetOzonCustomerMessageChatDispatcher
 {
     private bool $isAddMessage = false;
 

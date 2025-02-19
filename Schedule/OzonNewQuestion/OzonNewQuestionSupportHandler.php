@@ -34,7 +34,9 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-
+/**
+ * Инициируем получение вопросов из чатов Ozon
+ */
 #[AsMessageHandler]
 final readonly class OzonNewQuestionSupportHandler
 {
