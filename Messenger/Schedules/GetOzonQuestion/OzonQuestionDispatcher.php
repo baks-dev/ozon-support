@@ -61,10 +61,7 @@ final class OzonQuestionDispatcher
         private readonly SupportHandler $supportHandler,
         private readonly DeduplicatorInterface $deduplicator,
         private readonly ExistSupportTicketInterface $existSupportTicket,
-    )
-    {
-        $this->deduplicator->namespace('ozon-support');
-    }
+    ) {}
 
 
     public function __invoke(OzonQuestionMessage $message): void
@@ -75,6 +72,7 @@ final class OzonQuestionDispatcher
 
         $DeduplicatorExecuted = $this->deduplicator
             ->expiresAfter('1 minute')
+            ->namespace('ozon-support')
             ->deduplication([$message->getProfile(), self::class]);
 
         if($DeduplicatorExecuted->isExecuted())

@@ -74,6 +74,12 @@ final class GetOzonQuestionsRequest extends Ozon
 
             if($response->getStatusCode() !== 200)
             {
+                // код ошибки, если пользователь не премиум
+                if((int) $content['code'] === 7)
+                {
+                    return false;
+                }
+
                 $this->logger->critical(
                     sprintf('ozon-support: Ошибка получения списка вопросов'),
                     [
