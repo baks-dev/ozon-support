@@ -17,11 +17,13 @@ ozon:
             name: 'Контактное лицо'
             desc: 'ФИО пользователя'
 
-
-
-
   question:
 
     name: 'Ozon Вопрос'
     desc: 'Тип профиля Ozon Вопрос'
+
+  review:
+
+    name: 'Ozon Отзыв'
+    desc: 'Тип профиля Ozon Отзыв'
 

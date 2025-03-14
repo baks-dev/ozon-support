@@ -71,26 +71,21 @@ final readonly class MarkReadingOzonMessageChatHandler
                 sprintf('Ошибка получения события по идентификатору : %s', $message->getId()),
                 [self::class.':'.__LINE__],
             );
-
             return;
         }
 
         $supportEvent->getDto($supportDTO);
         $SupportInvariableDTO = $supportDTO->getInvariable();
 
-        /** Если событие изменилось - Invariable равен null  */
+        /** Если событие изменилось - Invariable равен null */
         if(is_null($SupportInvariableDTO))
         {
             $this->logger->warning(
                 sprintf('Ошибка получения Invariable события по идентификатору : %s', $message->getId()),
                 [self::class.':'.__LINE__],
             );
-
             return;
         }
-
-        /** @var SupportMessageDTO $lastMessage */
-        $lastMessage = $supportDTO->getMessages()->last();
 
         // проверяем тип профиля
         $typeProfile = $SupportInvariableDTO->getType();
@@ -99,6 +94,9 @@ final readonly class MarkReadingOzonMessageChatHandler
         {
             return;
         }
+
+        /** @var SupportMessageDTO $lastMessage */
+        $lastMessage = $supportDTO->getMessages()->last();
 
         // проверяем наличие внешнего ID - обязательно для сообщений, поступающий от Ozon API
         if(null === $lastMessage->getExternal())

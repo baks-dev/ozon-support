@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2024.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +23,13 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Api\Question\Tests;
+namespace BaksDev\Ozon\Support\Api\ReviewInfo\Get\Tests;
 
-use BaksDev\Ozon\Support\Api\Question\PostOzonQuestionsViewedRequest;
+use BaksDev\Ozon\Support\Api\ReviewInfo\Get\GetOzonReviewInfoRequest;
+use BaksDev\Ozon\Support\Api\ReviewInfo\Get\OzonReviewInfoDTO;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
+use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -36,13 +38,13 @@ use Symfony\Component\DependencyInjection\Attribute\When;
  * @group ozon-support-api
  */
 #[When(env: 'test')]
-class PostOzonQuestionViewedTest extends KernelTestCase
+class OzonReviewInfoRequestTest extends KernelTestCase
 {
-    private static OzonAuthorizationToken $Authorization;
+    private static OzonAuthorizationToken $authorization;
 
     public static function setUpBeforeClass(): void
     {
-        self::$Authorization = new OzonAuthorizationToken(
+        self::$authorization = new OzonAuthorizationToken(
             new UserProfileUid(),
             $_SERVER['TEST_OZON_TOKEN'],
             $_SERVER['TEST_OZON_CLIENT'],
@@ -50,20 +52,28 @@ class PostOzonQuestionViewedTest extends KernelTestCase
         );
     }
 
-    public function testRequest(): void
+    public function testComplete(): void
     {
         self::assertTrue(true);
         return;
 
-        /** @var PostOzonQuestionsViewedRequest $PostOzonQuestionsViewedRequest */
-        $PostOzonQuestionsViewedRequest = self::getContainer()->get(PostOzonQuestionsViewedRequest::class);
-        $PostOzonQuestionsViewedRequest->TokenHttpClient(self::$Authorization);
+        /** @var GetOzonReviewInfoRequest $getOzonReviewInfoRequest */
+        $getOzonReviewInfoRequest = self::getContainer()->get(GetOzonReviewInfoRequest::class);
+        $getOzonReviewInfoRequest->TokenHttpClient(self::$authorization);
 
-        $update = $PostOzonQuestionsViewedRequest
-            ->question('0194a2f2-dde1-71e6-b024-eb88f806d3f8')
-            ->question('0194a281-5f5c-7b35-8570-be3351b3c0fc')
-            ->update();
+        $reviewInfo = $getOzonReviewInfoRequest
+            ->getReviewInfo('0192eda4-842c-70a5-a4e2-e254b267a5ec');
 
-        self::assertTrue($update);
+        self::assertNotFalse($reviewInfo);
+        self::assertInstanceOf(OzonReviewInfoDTO::class, $reviewInfo);
+
+        /** @var OzonReviewInfoDTO $reviewInfo */
+        self::assertIsString($reviewInfo->getId());
+        self::assertIsInt($reviewInfo->getSku());
+        self::assertIsInt($reviewInfo->getRating());
+        self::assertIsArray($reviewInfo->getPhotos());
+        self::assertIsString($reviewInfo->getText());
+        self::assertIsString($reviewInfo->getOrderStatus());
+        self::assertTrue($reviewInfo->getPublished() instanceof DateTimeImmutable);
     }
 }

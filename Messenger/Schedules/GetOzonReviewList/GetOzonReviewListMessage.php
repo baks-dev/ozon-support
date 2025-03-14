@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -23,43 +23,23 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatMessages;
+namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonReviewList;
 
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 
-/** @see GetOzonCustomerMessageChatDispatcher */
-final class GetOzonCustomerMessageChatMessage
+/** @see OzonReviewsDispatcher */
+final class GetOzonReviewListMessage
 {
+    /** Идентификатор профиля пользователя */
+    private string $profile;
 
-    /**
-     * Идентификатор чата на Ozon
-     */
-    private string $chatId;
-
-    /**
-     * Идентификатор профиля пользователя
-     */
-    private UserProfileUid $profile;
-
-    public function __construct(string $chatId, UserProfileUid|string $profile)
+    public function __construct(UserProfileUid|string $profile)
     {
-        if(is_string($profile))
-        {
-            $profile = new UserProfileUid($profile);
-        }
-
-        $this->profile = $profile;
-
-        $this->chatId = $chatId;
-    }
-
-    public function getChatId(): string
-    {
-        return $this->chatId;
+        $this->profile = (string) $profile;
     }
 
     public function getProfile(): UserProfileUid
     {
-        return $this->profile;
+        return new UserProfileUid($this->profile);
     }
 }
