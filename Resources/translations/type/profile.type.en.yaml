@@ -27,5 +27,10 @@ ozon:
 
   question:
 
-    name: 'Ozon Вопрос'
-    desc: 'Тип профиля Ozon Вопрос'
+    name: 'Ozon Question'
+    desc: 'Ozon Question profile type'
+
+  review:
+
+    name: 'Ozon Review'
+    desc: 'Ozon Review profile type'

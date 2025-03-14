@@ -31,6 +31,7 @@ use BaksDev\Ozon\Support\Api\Get\ChatMessages\OzonMessageChatDTO;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
 use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Entity\Support;
+use BaksDev\Support\Repository\ExistTicket\ExistSupportTicketInterface;
 use BaksDev\Support\Repository\SupportCurrentEventByTicket\CurrentSupportEventByTicketInterface;
 use BaksDev\Support\Type\Priority\SupportPriority;
 use BaksDev\Support\Type\Priority\SupportPriority\Collection\SupportPriorityLow;
@@ -59,6 +60,7 @@ final class GetOzonCustomerMessageChatDispatcher
         private readonly DeduplicatorInterface $deduplicator,
         private readonly GetOzonChatMessagesRequest $chatHistoryRequest,
         private readonly CurrentSupportEventByTicketInterface $supportByOzonChat,
+        private readonly ExistSupportTicketInterface $existSupportTicket,
         private readonly SupportHandler $supportHandler,
     )
     {
@@ -162,6 +164,16 @@ final class GetOzonCustomerMessageChatDispatcher
 
             // проверка в дедубликаторе
             if($deduplicator->isExecuted())
+            {
+                continue;
+            }
+
+            // проверка в базе
+            $chatExist = $this->existSupportTicket
+                ->ticket($chatMessage->getId())
+                ->exist();
+
+            if($chatExist)
             {
                 continue;
             }

@@ -1,17 +1,17 @@
 <?php
 /*
  *  Copyright 2024.  Baks.dev <admin@baks.dev>
- *  
+ *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
  *  in the Software without restriction, including without limitation the rights
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is furnished
  *  to do so, subject to the following conditions:
- *  
+ *
  *  The above copyright notice and this permission notice shall be included in all
  *  copies or substantial portions of the Software.
- *  
+ *
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  *  FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,47 +19,41 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
+ *
  */
 
 declare(strict_types=1);
 
-namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatMessages;
+namespace BaksDev\Ozon\Support\Type;
 
-use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
+use BaksDev\Users\Profile\TypeProfile\Type\Id\Choice\Collection\TypeProfileInterface;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
-/** @see GetOzonCustomerMessageChatDispatcher */
-final class GetOzonCustomerMessageChatMessage
+#[AutoconfigureTag('baks.users.profile.type')]
+final class OzonReviewProfileType implements TypeProfileInterface
 {
+    /** UUIDv7 */
+    public const string TYPE = '9ccd393f-bd13-7e01-b821-10efcc0175bb';
 
-    /**
-     * Идентификатор чата на Ozon
-     */
-    private string $chatId;
-
-    /**
-     * Идентификатор профиля пользователя
-     */
-    private UserProfileUid $profile;
-
-    public function __construct(string $chatId, UserProfileUid|string $profile)
+    public function __toString(): string
     {
-        if(is_string($profile))
-        {
-            $profile = new UserProfileUid($profile);
-        }
-
-        $this->profile = $profile;
-
-        $this->chatId = $chatId;
+        return self::TYPE;
     }
 
-    public function getChatId(): string
+    /** Возвращает значение (value) */
+    public function getValue(): string
     {
-        return $this->chatId;
+        return self::TYPE;
     }
 
-    public function getProfile(): UserProfileUid
+    /** Сортировка */
+    public static function priority(): int
     {
-        return $this->profile;
+        return 455;
+    }
+
+    public static function equals(mixed $uid): bool
+    {
+        return self::TYPE === (string) $uid;
     }
 }
