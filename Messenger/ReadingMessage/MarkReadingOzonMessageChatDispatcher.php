@@ -45,7 +45,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * - в случае ошибки OZON API повторяем текущий процесс через интервал времени
  */
 #[AsMessageHandler]
-final readonly class MarkReadingOzonMessageChatHandler
+final readonly class MarkReadingOzonMessageChatDispatcher
 {
     public function __construct(
         #[Target('ozonSupportLogger')] private LoggerInterface $logger,

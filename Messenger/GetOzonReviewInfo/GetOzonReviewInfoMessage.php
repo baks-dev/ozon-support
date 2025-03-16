@@ -27,7 +27,7 @@ namespace BaksDev\Ozon\Support\Messenger\GetOzonReviewInfo;
 
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 
-/** @see OzonReviewInfoHandler */
+/** @see OzonReviewInfoDispatcher */
 final class GetOzonReviewInfoMessage
 {
     private string $profile;

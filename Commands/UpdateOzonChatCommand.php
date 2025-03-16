@@ -68,63 +68,93 @@ final class UpdateOzonChatCommand extends Command
 
         $helper = $this->getHelper('question');
 
+
+        /**
+         * Интерактивная форма списка профилей
+         */
+
         $questions[] = 'Все';
 
-        /** @var UserProfileUid $profile */
-        foreach($profiles as $profile)
+        foreach($profiles as $quest)
         {
-            $questions[] = $profile->getAttr().' ( ID: '.(string) $profile.')';
+            $questions[] = $quest->getAttr();
         }
 
-        /** Объявляем вопрос с вариантами ответов */
-        $profileQuestion = new ChoiceQuestion(
-            question: 'Профиль пользователя',
-            choices: $questions,
-            default: 0
+        $questions['+'] = 'Выполнить все асинхронно';
+        $questions['-'] = 'Выйти';
+
+        $question = new ChoiceQuestion(
+            'Профиль пользователя (Ctrl+C чтобы выйти)',
+            $questions,
+            '0'
         );
 
-        $profileName = $helper->ask($input, $output, $profileQuestion);
+        $key = $helper->ask($input, $output, $question);
 
-        if($profileName === 'Все')
+        /**
+         *  Выходим без выполненного запроса
+         */
+
+        if($key === '-' || $key === 'Выйти')
+        {
+            return Command::SUCCESS;
+        }
+
+
+        /**
+         * Выполняем все с возможностью асинхронно в очереди
+         */
+
+        if($key === '+' || $key === '0' || $key === 'Все')
         {
             /** @var UserProfileUid $profile */
             foreach($profiles as $profile)
             {
-                $this->update($profile);
+                $this->update($profile, $key === '+');
             }
+
+            $this->io->success('Чаты успешно обновлены');
+            return Command::SUCCESS;
         }
-        else
+
+
+        /**
+         * Выполняем определенный профиль
+         */
+
+        $UserProfileUid = null;
+
+        foreach($profiles as $profile)
         {
-            $UserProfileUid = null;
-
-            foreach($profiles as $profile)
+            if($profile->getAttr() === $questions[$key])
             {
-                if($profile->getAttr() === $questions[$profileName])
-                {
-                    /* Присваиваем профиль пользователя */
-                    $UserProfileUid = $profile;
-                    break;
-                }
-            }
-
-            if($UserProfileUid)
-            {
-                $this->update($UserProfileUid);
+                /* Присваиваем профиль пользователя */
+                $UserProfileUid = $profile;
+                break;
             }
         }
 
-        $this->io->success('Чаты успешно обновлены');
+        if($UserProfileUid)
+        {
+            $this->update($UserProfileUid);
 
+            $this->io->success('Чаты успешно обновлены');
+            return Command::SUCCESS;
+        }
+
+        $this->io->success('Профиль пользователя не найден');
         return Command::SUCCESS;
+
     }
 
 
-    private function update(UserProfileUid|string $profile): void
+    private function update(UserProfileUid|string $profile, bool $async = false): void
     {
         $this->io->note(sprintf('Обновляем профиль %s', $profile->getAttr()));
 
         $this->messageDispatch->dispatch(
             message: new GetOzonChatListMessage($profile),
+            transport: $async === true ? (string) $profile : null
         );
     }
 }

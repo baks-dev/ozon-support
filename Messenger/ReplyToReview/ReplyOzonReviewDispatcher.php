@@ -25,40 +25,35 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\ReplyToReview;
 
+use BaksDev\Core\Messenger\MessageDelay;
+use BaksDev\Core\Messenger\MessageDispatchInterface;
+use BaksDev\Ozon\Support\Api\ReviewComments\Post\PostOzonReviewCommentRequest;
 use BaksDev\Ozon\Support\Type\OzonReviewProfileType;
+use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
-use BaksDev\Support\Type\Status\SupportStatus;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
-use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusOpen;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
-use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-/**
- * preview @see OzonReviewInfoHandler
- * next @see ReplyOzonReviewHandler
- */
 #[AsMessageHandler]
-final readonly class AutoReplyOzonReviewHandler
+final readonly class ReplyOzonReviewDispatcher
 {
     public function __construct(
         #[Target('ozonSupportLogger')] private LoggerInterface $logger,
-        private SupportHandler $supportHandler,
+        private MessageDispatchInterface $messageDispatch,
+        private PostOzonReviewCommentRequest $postCommentRequest,
         private CurrentSupportEventRepository $currentSupportEvent,
     ) {}
 
     /**
-     * - добавляет сообщение с автоматическим ответом
-     * - закрывает чат
-     * - сохраняет новое состояние чата в БД
+     * - при закрытии чата с отзывом - отсылает ответ (комментарий) на отзыв
+     * - изменяет статус отзыва на "обработанный"
      */
-    public function __invoke(AutoReplyOzonReviewMessage $message): void
+    public function __invoke(SupportMessage $message): void
     {
-        $supportDTO = new SupportDTO();
-
         $supportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
             ->find();
@@ -73,11 +68,13 @@ final readonly class AutoReplyOzonReviewHandler
             return;
         }
 
+        $supportDTO = new SupportDTO();
+
         // гидрируем DTO активным событием
         $supportEvent->getDto($supportDTO);
 
-        // обрабатываем только на открытый тикет
-        if(false === ($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusOpen))
+        // обрабатываем только закрытые тикеты
+        if(false === ($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose))
         {
             return;
         }
@@ -97,36 +94,38 @@ final readonly class AutoReplyOzonReviewHandler
             return;
         }
 
-        // формируем сообщение в зависимости от условий отзыва
-        $reviewRating = $message->getRating();
+        // последнее сообщение в закрытом чате = наш ответ
+        /** @var SupportMessageDTO $lastMessage */
+        $lastMessage = $supportDTO->getMessages()->last();
 
-        if($reviewRating === 5)
+        // проверяем наличие внешнего ID - для наших ответов его быть не должно
+        if(null !== $lastMessage->getExternal())
         {
-            $answerMessage = '<div>Здравствуйте! 
-        Благодарим Вас за то, что выбрали наш магазин для покупки! 
-        Мы ценим Ваше доверие и всегда стремимся предоставить лучший сервис.</div>';
-        }
-        else
-        {
-            $answerMessage = '<div>Здравствуйте! 
-        Приносим извинения за доставленные неудобства! 
-        Мы ценим Ваше доверие и всегда стремимся предоставить лучший сервис.</div>';
+            return;
         }
 
-        $supportMessageDTO = new SupportMessageDTO();
+        /** Отправляем ответ на отзыв и меняем его статус на "обработанный" */
+        $request = $this->postCommentRequest
+            ->profile($supportInvariableDTO->getProfile())
+            ->reviewId($supportInvariableDTO->getTicket())
+            ->text($lastMessage->getMessage())
+            ->markAsProcessed()
+            ->postReviewComment();
 
-        $supportMessageDTO->setName('admin (OZON Seller)');
-        $supportMessageDTO->setMessage($answerMessage);
-        $supportMessageDTO->setDate(new \DateTimeImmutable('now'));
-        $supportMessageDTO->setOutMessage();
+        if(false === $request)
+        {
+            $this->logger->warning(
+                sprintf('Повтор отправки ответа на отзыв %s через 1 минут', $supportInvariableDTO->getTicket()),
+                [self::class.':'.__LINE__],
+            );
 
-        // добавляем сформированное сообщение
-        $supportDTO->addMessage($supportMessageDTO);
+            $this->messageDispatch
+                ->dispatch(
+                    message: $message,
+                    stamps: [new MessageDelay('1 minute')],
+                    transport: 'ozon-support-low',
+                );
+        }
 
-        // закрываем чат
-        $supportDTO->setStatus(new SupportStatus(SupportStatusClose::PARAM));
-
-        // сохраняем ответ
-        $this->supportHandler->handle($supportDTO);
     }
 }

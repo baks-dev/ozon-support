@@ -50,10 +50,10 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
  * preview @see OzonReviewsDispatcher
- * next @see AutoReplyOzonReviewHandler
+ * next @see AutoReplyOzonReviewDispatcher
  */
 #[AsMessageHandler]
-final readonly class OzonReviewInfoHandler
+final readonly class OzonReviewInfoDispatcher
 {
     public function __construct(
         #[Target('ozonSupportLogger')] private LoggerInterface $logger,
@@ -106,7 +106,7 @@ final readonly class OzonReviewInfoHandler
             ->getReviewInfo($reviewId);
 
         // при ошибке от Ozon API - повторяем запрос через 10 минут
-        if(false === $reviewInfo)
+        if(false === ($reviewInfo instanceof OzonReviewInfoDTO))
         {
             $this->messageDispatch->dispatch(
                 $message,
@@ -145,39 +145,41 @@ final readonly class OzonReviewInfoHandler
 
         $result = $this->supportHandler->handle($supportDto);
 
-        // после добавления отзыва в БД - инициирую авто ответ по условию
-        if($result instanceof Support)
-        {
-            /**
-             * Условия ответа на отзывы
-             *
-             * рейтинг равен 5 с текстом:
-             * - авто комментарий с благодарностью (сообщение)
-             *
-             * рейтинг меньше 5 и без текста:
-             * - авто комментарий с извинениями (сообщение)
-             *
-             * рейтинг меньше 5 с текстом:
-             * - отвечает контент менеджер
-             */
-
-            if(
-                $reviewRating === 5 or
-                ($reviewRating < 5 and empty($reviewInfo->getText()))
-            )
-            {
-                $this->messageDispatch->dispatch(
-                    message: new AutoReplyOzonReviewMessage($result->getId(), $reviewRating),
-                    transport: 'ozon-support',
-                );
-            }
-        }
-        else
+        if(false === ($result instanceof Support))
         {
             $this->logger->critical(
                 sprintf('avito-support: Ошибка %s при создании нового отзыва', $result),
                 [self::class.':'.__LINE__]
             );
+
+            return;
         }
+
+
+        // после добавления отзыва в БД - инициирую авто ответ по условию
+
+        /**
+         * Условия ответа на отзывы
+         *
+         * рейтинг равен 5 с текстом:
+         * - авто комментарий с благодарностью (сообщение)
+         *
+         * рейтинг меньше 5 и без текста:
+         * - авто комментарий с извинениями (сообщение)
+         *
+         * рейтинг меньше 5 с текстом:
+         * - отвечает контент менеджер
+         */
+
+        if($reviewRating === 5 || empty($reviewInfo->getText()))
+        {
+            $this->messageDispatch->dispatch(
+                message: new AutoReplyOzonReviewMessage($result->getId(), $reviewRating),
+                transport: 'ozon-support',
+            );
+        }
+
+        $deduplicator->save();
+
     }
 }

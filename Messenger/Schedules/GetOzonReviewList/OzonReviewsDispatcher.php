@@ -38,7 +38,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * - на каждый отзыв кидаем сообщение для его обработки
  *
  * prev @see OzonNewReviewSupportHandler
- * next @see OzonReviewInfoHandler
+ * next @see OzonReviewInfoDispatcher
  */
 #[AsMessageHandler]
 final readonly class OzonReviewsDispatcher

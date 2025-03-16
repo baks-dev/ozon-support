@@ -27,7 +27,7 @@ namespace BaksDev\Ozon\Support\Messenger\ReplyToReview;
 
 use BaksDev\Support\Type\Id\SupportUid;
 
-/** @see AutoReplyOzonReviewHandler */
+/** @see AutoReplyOzonReviewDispatcher */
 final readonly class AutoReplyOzonReviewMessage
 {
     public function __construct(
