@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -127,34 +127,43 @@ final readonly class OzonMessageChatDTO
     /** Массив с содержимым сообщения в формате Markdown. */
     public function getData(): string
     {
-        // 1 - начало для ссылок на изображения от api ozon. Формат для ссылок api - ![](ссылка)
+        $imageLink = false;
+
+        // 1 - начало для ссылок на изображения от api ozon.
+
+        // [Screenshot_... (...KB)](https://api-seller.ozon.ru/v2/chat/file/.../....jpg)
+        if(stripos($this->data, 'Screenshot') !== false)
+        {
+            preg_match('/((.*?))/', $this->data, $apiLinkMatches);
+            empty($apiLinkMatches[1]) ?: $imageLink = $apiLinkMatches[1];
+        }
+
+        // Формат для ссылок api - ![](ссылка)
         if(str_starts_with($this->data, '!'))
         {
             preg_match('~\(\K.+?(?=\))~', $this->data, $apiLinkMatches);
-
-            // формируем ссылку на наш контроллер
-            if(false === empty($apiLinkMatches))
-            {
-                $apiLink = $apiLinkMatches[0];
-
-                $pathInfo = pathinfo($apiLink);
-
-                /**
-                 * @see FileController
-                 */
-                $url = '/admin/ozon-support/files/'.$pathInfo['basename'].'/info';
-
-                // миниатюра картинки
-                $miniature = sprintf('<img src="%s" width="200" height="auto">', $url);
-
-                // ссылка на полноразмерное изображение
-                $link = sprintf('<a href="%s" class="ms-3" target="_blank">Открыть полное фото<a/>', $url);
-
-                return $miniature.' '.$link;
-            }
-
-            return '<strong><i>Контент пользователя доступty только в чате личного кабинета OZON Seller</i></strong>';
+            empty($apiLinkMatches) ?: $imageLink = $apiLinkMatches[0];
         }
+
+
+        if($imageLink)
+        {
+            $pathInfo = pathinfo($imageLink);
+
+            /**
+             * @see FileController
+             */
+            $url = '/admin/ozon-support/files/'.$pathInfo['basename'].'/info';
+
+            // миниатюра картинки
+            $miniature = sprintf('<img src="%s" width="200" height="auto">', $url);
+
+            // ссылка на полноразмерное изображение
+            $link = sprintf('<a href="%s" class="ms-3" target="_blank">Открыть полное фото<a/>', $url);
+
+            return $miniature.' '.$link;
+        }
+
 
         // ищем ссылку в фигурных скобках. Формат для ссылок - [текст](ссылка)
         //preg_match('~\(\K.+?(?=\))~', $this->data, $linkMatches);
