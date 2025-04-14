@@ -19,7 +19,6 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
- *
  */
 
 declare(strict_types=1);
@@ -96,7 +95,6 @@ final class OzonReviewListRequest extends Ozon
 
         while(true)
         {
-
             $cacheKey = md5($this->getProfile().$this->lastId.self::class);
 
             $result = $cache->get($cacheKey, function(ItemInterface $item): array|false {
@@ -152,6 +150,10 @@ final class OzonReviewListRequest extends Ozon
                 return $result;
             });
 
+            if(false === $result)
+            {
+                return false;
+            }
 
             foreach($result['reviews'] as $review)
             {

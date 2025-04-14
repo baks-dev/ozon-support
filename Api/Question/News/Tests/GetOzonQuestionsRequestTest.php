@@ -60,19 +60,23 @@ class GetOzonQuestionsRequestTest extends KernelTestCase
 
         $questions = $GetOzonQuestionsRequest->findAll();
 
-        if($questions->valid())
+        if(false === $questions || false === $questions->valid())
         {
-            /** @var OzonQuestionDTO $question */
+            self::assertFalse(false);
+            return;
+        }
 
-            foreach($questions as $question)
-            {
-                self::assertIsString($question->getId());
-                self::assertIsInt($question->getSku());
-                self::assertIsString($question->getName());
-                self::assertIsString($question->getText());
-                self::assertInstanceOf(DateTimeImmutable::class, $question->getCreated());
 
-            }
+        /** @var OzonQuestionDTO $question */
+
+        foreach($questions as $question)
+        {
+            self::assertIsString($question->getId());
+            self::assertIsInt($question->getSku());
+            self::assertIsString($question->getName());
+            self::assertIsString($question->getText());
+            self::assertInstanceOf(DateTimeImmutable::class, $question->getCreated());
+
         }
 
 
