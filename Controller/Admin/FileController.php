@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -39,16 +39,18 @@ use Symfony\Component\Routing\Annotation\Route;
 final class FileController extends AbstractController
 {
     /**
-     * При изменении ссылки ссылку в OzonMessageChatDTO
+     * При изменении ссылки изменить ссылку в OzonMessageChatDTO
      * @see OzonMessageChatDTO:145
      */
     #[Route(
-        path: '/admin/ozon-support/files/{file}/info',
+        path: '/admin/ozon-support/files/{ticket}/{message}/{file}/info',
         name: 'admin.ozon.support.files',
         methods: ['GET'],
     )]
     public function index(
         GetOzonFileChatRequest $getOzonLinkRequest,
+        string $ticket,
+        string $message,
         string $file,
     ): Response
     {
@@ -58,7 +60,10 @@ final class FileController extends AbstractController
 
         $content = $getOzonLinkRequest
             ->profile($profile)
-            ->get($file);
+            ->ticket($ticket)
+            ->message($message)
+            ->file($file)
+            ->get();
 
         if(false === $content)
         {
