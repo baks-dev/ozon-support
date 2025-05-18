@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Api\Get\ChatMessages;
 
+use DateInvalidTimeZoneException;
+use DateMalformedStringException;
 use DateTimeImmutable;
 use DateTimeZone;
 
@@ -51,6 +53,10 @@ final readonly class OzonMessageChatDTO
     /** ВНУТРЕННИЙ ПАРАМЕТР. Заголовок сообщений о возврате. */
     private ?string $refundTitle;
 
+    /**
+     * @throws DateInvalidTimeZoneException
+     * @throws DateMalformedStringException
+     */
     public function __construct(array $data)
     {
         $this->id = (string) $data['message_id'];
@@ -59,21 +65,13 @@ final readonly class OzonMessageChatDTO
         $this->read = $data['is_read'];
 
         $moscowTimezone = new DateTimeZone(date_default_timezone_get());
-        $this->created = (new DateTimeImmutable($data['created_at']))->setTimezone($moscowTimezone);
+        $this->created = new DateTimeImmutable($data['created_at'])->setTimezone($moscowTimezone);
 
         $message = $data['data'];
-        $current = current(['data']);
 
-        // сообщение-возврат
-        if(stripos($current, '-R') !== false)
-        {
-            $this->data = $message[1];
-            $this->refundTitle = $message[0];
-            return;
-        }
+        // Признак, что сообщение содержит изображение
 
-        // сообщение-изображение
-        if(str_starts_with($current, '!'))
+        if($data['is_image'])
         {
             $this->refundTitle = null;
             $this->data = current($message);
@@ -149,6 +147,11 @@ final readonly class OzonMessageChatDTO
         if($imageLink)
         {
             $pathInfo = pathinfo($imageLink);
+
+
+            //            $this->ticket, // идентификатор чата (тикета)
+            //            $this->message, // идентификатор сообщения // message_id
+            //            $this->file // файл
 
             /**
              * @see FileController

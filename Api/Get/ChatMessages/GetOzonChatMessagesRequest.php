@@ -110,7 +110,7 @@ final class GetOzonChatMessagesRequest extends Ozon
     /**
      * Список сообщений чата
      *
-     * @see https://docs.ozon.ru/api/seller/#operation/ChatAPI_ChatHistoryV2
+     * @see https://docs.ozon.ru/api/seller/?__rr=1#operation/ChatAPI_ChatHistoryV3
      *
      * @return Generator<int, OzonMessageChatDTO>
      */
@@ -132,7 +132,7 @@ final class GetOzonChatMessagesRequest extends Ozon
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',
-                '/v2/chat/history',
+                '/v3/chat/history',
                 ["json" => $json]
             );
 
