@@ -162,7 +162,7 @@ final readonly class OzonMessageChatDTO
             $miniature = sprintf('<img src="%s" width="200" height="auto">', $url);
 
             // ссылка на полноразмерное изображение
-            $link = sprintf('<a href="%s" class="ms-3" target="_blank">Открыть полное фото<a/>', $url);
+            $link = sprintf('<a href="%s" class="ms-3" target="_blank">Открыть полное фото</a>', $url);
 
             return $miniature.' '.$link;
         }
