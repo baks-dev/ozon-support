@@ -19,7 +19,6 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
- *
  */
 
 declare(strict_types=1);
@@ -102,7 +101,7 @@ final class PostOzonReviewCommentRequest extends Ozon
                 [
                     "json" => [
                         "mark_review_as_processed" => $this->markAsProcessed,
-                        "parent_comment_id" => $this->parentCommentId,
+                        "parent_comment_id" => $this->parentCommentId ?: null,
                         "review_id" => $this->reviewId,
                         "text" => $this->text,
                     ]

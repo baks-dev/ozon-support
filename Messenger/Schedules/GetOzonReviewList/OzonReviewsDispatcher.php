@@ -81,13 +81,9 @@ final readonly class OzonReviewsDispatcher
             return;
         }
 
-
         // каждый отзыв - это наш чат
         foreach($reviewList as $review)
         {
-
-
-
             $this->messageDispatch->dispatch(
                 message: new GetOzonReviewInfoMessage($profile, $review->getId()),
                 transport: 'ozon-support',
