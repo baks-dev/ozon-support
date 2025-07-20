@@ -28,7 +28,9 @@ namespace BaksDev\Ozon\Support\Controller\Admin;
 use BaksDev\Core\Controller\AbstractController;
 use BaksDev\Core\Listeners\Event\Security\RoleSecurity;
 use BaksDev\Ozon\Support\Api\Get\ChatFile\GetOzonFileChatRequest;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use DomainException;
+use http\Exception\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Attribute\AsController;
@@ -56,10 +58,15 @@ final class FileController extends AbstractController
     {
         $fileInfo = pathinfo($file);
 
-        $profile = $this->getProfileUid();
+        $UserProfileUid = $this->getProfileUid();
+
+        if(false === ($UserProfileUid instanceof UserProfileUid))
+        {
+            throw new InvalidArgumentException('Не указан профиль пользователя для просмотра файла');
+        }
 
         $content = $getOzonLinkRequest
-            ->profile($profile)
+            ->forTokenIdentifier($UserProfileUid)
             ->ticket($ticket)
             ->message($message)
             ->file($file)
