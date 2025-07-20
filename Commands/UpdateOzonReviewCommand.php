@@ -26,7 +26,7 @@ namespace BaksDev\Ozon\Support\Commands;
 
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\AllProfileToken\AllProfileOzonTokenInterface;
-use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonReviewList\GetOzonReviewListMessage;
+use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonReviewList\OzonReviewListMessage;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -151,7 +151,7 @@ final class UpdateOzonReviewCommand extends Command
         $this->io->note(sprintf('Обновляем профиль %s', $profile->getAttr()));
 
         $this->messageDispatch->dispatch(
-            message: new GetOzonReviewListMessage($profile),
+            message: new OzonReviewListMessage($profile),
             transport: $async === true ? (string) $profile : null
         );
     }

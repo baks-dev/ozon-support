@@ -72,7 +72,6 @@ final class GetOzonCustomerMessageChatDispatcher
     public function __invoke(GetOzonCustomerMessageChatMessage $message): void
     {
         $ticket = $message->getChatId();
-        $profile = $message->getProfile();
 
         /** SupportEvent */
         $supportDTO = new SupportDTO();
@@ -81,7 +80,7 @@ final class GetOzonCustomerMessageChatDispatcher
 
         /** SupportInvariable */
         $supportInvariableDTO = new SupportInvariableDTO();
-        $supportInvariableDTO->setProfile($profile);
+        $supportInvariableDTO->setProfile($message->getProfile());
         $supportInvariableDTO->setType(new TypeProfileUid(OzonSupportProfileType::TYPE));
         $supportInvariableDTO->setTicket($message->getChatId());
 
@@ -89,7 +88,7 @@ final class GetOzonCustomerMessageChatDispatcher
 
         // получаем массив сообщений из чата
         $messagesChat = $this->chatHistoryRequest
-            ->profile($profile)
+            ->forTokenIdentifier($message->getProfile())
             ->chatId($ticket)
             ->sortByNew()
             ->limit(50)
@@ -223,7 +222,7 @@ final class GetOzonCustomerMessageChatDispatcher
                     sprintf('ozon-support: Ошибка %s при создании/обновлении чата поддержки', $handle),
                     [
                         self::class.':'.__LINE__,
-                        $profile,
+                        $message->getProfile(),
                         $supportDTO->getInvariable()?->getTicket(),
                     ],
                 );

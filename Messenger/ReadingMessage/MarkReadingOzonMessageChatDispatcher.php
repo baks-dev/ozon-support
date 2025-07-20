@@ -27,12 +27,16 @@ namespace BaksDev\Ozon\Support\Messenger\ReadingMessage;
 
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
+use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\Post\MarkReading\MarkReadingOzonMessageChatRequest;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
+use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
+use BaksDev\Support\UseCase\Admin\New\Invariable\SupportInvariableDTO;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -51,7 +55,7 @@ final readonly class MarkReadingOzonMessageChatDispatcher
         #[Target('ozonSupportLogger')] private LoggerInterface $logger,
         private CurrentSupportEventRepository $currentSupportEvent,
         private MarkReadingOzonMessageChatRequest $markReadingOzonMessageChatRequest,
-        private MessageDispatchInterface $messageDispatch
+        private MessageDispatchInterface $messageDispatch,
     ) {}
 
     /**
@@ -61,36 +65,48 @@ final readonly class MarkReadingOzonMessageChatDispatcher
     {
         $supportDTO = new SupportDTO();
 
-        $supportEvent = $this->currentSupportEvent
+        $CurrentSupportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
             ->find();
 
-        if(false === $supportEvent)
+        if(false === ($CurrentSupportEvent instanceof SupportEvent))
         {
             $this->logger->critical(
-                sprintf('Ошибка получения события по идентификатору : %s', $message->getId()),
+                sprintf('ozon-support: Ошибка получения события по идентификатору : %s', $message->getId()),
                 [self::class.':'.__LINE__],
             );
             return;
         }
 
-        $supportEvent->getDto($supportDTO);
+        $UserProfileUid = $CurrentSupportEvent->getInvariable()?->getProfile();
+
+        if(false === ($UserProfileUid instanceof UserProfileUid))
+        {
+            $this->logger->critical(
+                sprintf('ozon-support: Ошибка получения профиля по идентификатору : %s', $message->getId()));
+
+            return;
+
+        }
+
+        $CurrentSupportEvent->getDto($supportDTO);
         $SupportInvariableDTO = $supportDTO->getInvariable();
 
         /** Если событие изменилось - Invariable равен null */
-        if(is_null($SupportInvariableDTO))
+        if(false === ($SupportInvariableDTO instanceof SupportInvariableDTO))
         {
             $this->logger->warning(
                 sprintf('Ошибка получения Invariable события по идентификатору : %s', $message->getId()),
                 [self::class.':'.__LINE__],
             );
+
             return;
         }
 
         // проверяем тип профиля
-        $typeProfile = $SupportInvariableDTO->getType();
+        $TypeProfileUid = $SupportInvariableDTO->getType();
 
-        if(false === $typeProfile->equals(OzonSupportProfileType::TYPE))
+        if(false === $TypeProfileUid->equals(OzonSupportProfileType::TYPE))
         {
             return;
         }
@@ -99,7 +115,7 @@ final readonly class MarkReadingOzonMessageChatDispatcher
         $lastMessage = $supportDTO->getMessages()->last();
 
         // проверяем наличие внешнего ID - обязательно для сообщений, поступающий от Ozon API
-        if(null === $lastMessage->getExternal())
+        if(is_null($lastMessage->getExternal()))
         {
             return;
         }
@@ -108,6 +124,7 @@ final readonly class MarkReadingOzonMessageChatDispatcher
 
         // отправляем запрос на прочтение
         $result = $this->markReadingOzonMessageChatRequest
+            ->forTokenIdentifier($UserProfileUid)
             ->chatId($SupportInvariableDTO->getTicket())
             ->fromMessage($lastMessageId)
             ->markReading();
@@ -117,7 +134,7 @@ final readonly class MarkReadingOzonMessageChatDispatcher
             $this->messageDispatch->dispatch(
                 $message,
                 [new MessageDelay('1 minutes')],
-                'ozon-support'
+                'ozon-support',
             );
         }
     }

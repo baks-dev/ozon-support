@@ -28,6 +28,7 @@ namespace BaksDev\Ozon\Support\Messenger\GetOzonReviewInfo;
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
+use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\ReviewInfo\Get\GetOzonReviewInfoRequest;
 use BaksDev\Ozon\Support\Api\ReviewInfo\Get\OzonReviewInfoDTO;
 use BaksDev\Ozon\Support\Messenger\ReplyToReview\AutoReplyOzonReviewMessage;
@@ -49,7 +50,7 @@ use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- * preview @see OzonReviewsDispatcher
+ * preview @see OzonReviewListDispatcher
  * next @see AutoReplyOzonReviewDispatcher
  */
 #[AsMessageHandler]
@@ -61,7 +62,7 @@ final readonly class OzonReviewInfoDispatcher
         private DeduplicatorInterface $deduplicator,
         private SupportHandler $supportHandler,
         private ExistSupportTicketInterface $existSupportTicket,
-        private GetOzonReviewInfoRequest $getOzonReviewInfoRequest,
+        private GetOzonReviewInfoRequest $getOzonReviewInfoRequest
     )
     {
         $this->deduplicator
@@ -76,15 +77,11 @@ final readonly class OzonReviewInfoDispatcher
      */
     public function __invoke(GetOzonReviewInfoMessage $message): void
     {
-        $profile = $message->getProfile();
-        $reviewId = $message->getReviewId();
-
         $deduplicator = $this->deduplicator->deduplication([
-            $reviewId,
+            $message->getReviewId(),
             self::class,
         ]);
 
-        // проверка в дедубликаторе
         if($deduplicator->isExecuted())
         {
             return;
@@ -92,18 +89,19 @@ final readonly class OzonReviewInfoDispatcher
 
         // id тикета = id отзыва
         $reviewExist = $this->existSupportTicket
-            ->ticket($reviewId)
+            ->ticket($message->getReviewId())
             ->exist();
 
         if(true === $reviewExist)
         {
+            $deduplicator->save();
             return;
         }
 
         /** @var OzonReviewInfoDTO $reviewInfo */
         $reviewInfo = $this->getOzonReviewInfoRequest
-            ->profile($profile)
-            ->getReviewInfo($reviewId);
+            ->forTokenIdentifier($message->getProfile())
+            ->getReviewInfo($message->getReviewId());
 
         // при ошибке от Ozon API - повторяем запрос через 10 минут
         if(false === ($reviewInfo instanceof OzonReviewInfoDTO))
@@ -111,13 +109,12 @@ final readonly class OzonReviewInfoDispatcher
             $this->messageDispatch->dispatch(
                 $message,
                 [new MessageDelay('10 minutes')],
-                'ozon-support'
+                'ozon-support',
             );
+
             return;
         }
 
-        $reviewRating = $reviewInfo->getRating();
-        $ticketId = $reviewInfo->getId();
 
         /** SupportEvent */
         $supportDto = new SupportDTO()
@@ -126,9 +123,9 @@ final readonly class OzonReviewInfoDispatcher
 
         /** SupportInvariable */
         $supportInvariableDTO = new SupportInvariableDTO()
-            ->setProfile($profile)
+            ->setProfile($message->getProfile())
             ->setType(new TypeProfileUid(OzonReviewProfileType::TYPE))
-            ->setTicket($ticketId)
+            ->setTicket($reviewInfo->getId())
             ->setTitle($reviewInfo->getTitle());
 
         $supportDto->setInvariable($supportInvariableDTO);
@@ -149,7 +146,7 @@ final readonly class OzonReviewInfoDispatcher
         {
             $this->logger->critical(
                 sprintf('avito-support: Ошибка %s при создании нового отзыва', $result),
-                [self::class.':'.__LINE__]
+                [self::class.':'.__LINE__],
             );
 
             return;
@@ -171,10 +168,10 @@ final readonly class OzonReviewInfoDispatcher
          * - отвечает контент менеджер
          */
 
-        if($reviewRating === 5 || empty($reviewInfo->getText()))
+        if($reviewInfo->getRating() === 5 || empty($reviewInfo->getText()))
         {
             $this->messageDispatch->dispatch(
-                message: new AutoReplyOzonReviewMessage($result->getId(), $reviewRating),
+                message: new AutoReplyOzonReviewMessage($result->getId(), $reviewInfo->getRating()),
                 transport: 'ozon-support',
             );
         }

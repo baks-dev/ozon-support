@@ -60,7 +60,7 @@ final readonly class GetOzonChatListDispatcher
          * - с непрочитанными сообщениями
          */
         $listChats = $this->ozonChatListRequest
-            ->profile($profile)
+            ->forTokenIdentifier($profile)
             ->opened()
             ->unreadMessageOnly()
             ->getListChats();

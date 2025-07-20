@@ -28,17 +28,23 @@ namespace BaksDev\Ozon\Support\Messenger\ReplyToReview;
 use BaksDev\Support\Type\Id\SupportUid;
 
 /** @see AutoReplyOzonReviewDispatcher */
-final readonly class AutoReplyOzonReviewMessage
+final  class AutoReplyOzonReviewMessage
 {
+    private string $id;
+
     public function __construct(
-        private SupportUid $id,
-        private int $rating,
-    ) {}
+        SupportUid $id,
+        private readonly int $rating,
+    )
+    {
+
+        $this->id = (string) $id;
+    }
 
     /** Идентификатор main */
     public function getId(): SupportUid
     {
-        return $this->id;
+        return new SupportUid($this->id);
     }
 
     /** Рейтинг отзыва */

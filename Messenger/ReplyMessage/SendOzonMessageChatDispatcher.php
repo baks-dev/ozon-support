@@ -27,13 +27,16 @@ namespace BaksDev\Ozon\Support\Messenger\ReplyMessage;
 
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
+use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\Post\SendMessage\SendOzonMessageChatRequest;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
+use BaksDev\Support\UseCase\Admin\New\Invariable\SupportInvariableDTO;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -46,6 +49,7 @@ final readonly class SendOzonMessageChatDispatcher
         private MessageDispatchInterface $messageDispatch,
         private CurrentSupportEventRepository $currentSupportEvent,
         private SendOzonMessageChatRequest $sendMessageRequest,
+        private OzonTokensByProfileInterface $OzonTokensByProfile,
     ) {}
 
     /**
@@ -59,25 +63,37 @@ final readonly class SendOzonMessageChatDispatcher
     {
         $supportDTO = new SupportDTO();
 
-        $supportEvent = $this->currentSupportEvent
+        $CurrentSupportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
             ->find();
 
-        if(false === $supportEvent)
+        if(false === $CurrentSupportEvent)
         {
             $this->logger->critical(
-                'Ошибка получения события по идентификатору :'.$message->getId(),
+                'ozon-support: Ошибка получения события по идентификатору :'.$message->getId(),
                 [self::class.':'.__LINE__],
             );
 
             return;
         }
 
-        $supportEvent->getDto($supportDTO);
+        $UserProfileUid = $CurrentSupportEvent->getInvariable()?->getProfile();
+
+        if(false === ($UserProfileUid instanceof UserProfileUid))
+        {
+            $this->logger->critical(
+                sprintf('ozon-support: Ошибка получения профиля по идентификатору : %s', $message->getId()));
+
+            return;
+
+        }
+
+
+        $CurrentSupportEvent->getDto($supportDTO);
 
         $SupportInvariableDTO = $supportDTO->getInvariable();
 
-        if(is_null($SupportInvariableDTO))
+        if(false === ($SupportInvariableDTO instanceof SupportInvariableDTO))
         {
             return;
         }
@@ -90,44 +106,45 @@ final readonly class SendOzonMessageChatDispatcher
             return;
         }
 
-        // ответы закрывают чат - реагируем на статус SupportStatusClose
-        if($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose)
+        /** Проверяем что чат закрыт */
+        if(false === $supportDTO->getStatus()->equals(SupportStatusClose::class))
         {
-            /** @var SupportMessageDTO $lastMessage */
-            $lastMessage = $supportDTO->getMessages()->last();
-
-            // проверяем наличие внешнего ID - для наших ответов его быть не должно
-            if(null !== $lastMessage->getExternal())
-            {
-                return;
-            }
-
-            $lastMessageText = $lastMessage->getMessage();
-
-            $UserProfileUid = $SupportInvariableDTO->getProfile();
-            $externalChatId = $SupportInvariableDTO->getTicket();
-
-            $result = $this->sendMessageRequest
-                ->profile($UserProfileUid)
-                ->chatId($externalChatId)
-                ->message($lastMessageText)
-                ->sendMessage();
-
-            if(false === $result)
-            {
-                $this->logger->warning(
-                    'Повтор выполнения сообщения через 1 минут',
-                    [self::class.':'.__LINE__],
-                );
-
-                $this->messageDispatch
-                    ->dispatch(
-                        message: $message,
-                        // задержка 1 минуту для отправки сообщение в существующий чат по его идентификатору
-                        stamps: [new MessageDelay('1 minutes')],
-                        transport: 'ozon-support',
-                    );
-            }
+            return;
         }
+
+        /** @var SupportMessageDTO $lastMessage */
+        $lastMessage = $supportDTO->getMessages()->last();
+
+        // проверяем наличие внешнего ID - для наших ответов его быть не должно
+        if(null !== $lastMessage->getExternal())
+        {
+            return;
+        }
+
+        $lastMessageText = $lastMessage->getMessage();
+        $externalChatId = $SupportInvariableDTO->getTicket();
+
+        $result = $this->sendMessageRequest
+            ->forTokenIdentifier($UserProfileUid)
+            ->chatId($externalChatId)
+            ->message($lastMessageText)
+            ->sendMessage();
+
+        if(false === $result)
+        {
+            $this->logger->warning(
+                'Повтор выполнения сообщения через 1 минут',
+                [self::class.':'.__LINE__],
+            );
+
+            $this->messageDispatch
+                ->dispatch(
+                    message: $message,
+                    // задержка 1 минуту для отправки сообщение в существующий чат по его идентификатору
+                    stamps: [new MessageDelay('1 minutes')],
+                    transport: 'ozon-support',
+                );
+        }
+
     }
 }

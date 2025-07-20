@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Api\ReviewList\Get\Tests;
 
+use BaksDev\Ozon\Orders\Type\ProfileType\TypeProfileFbsOzon;
 use BaksDev\Ozon\Support\Api\ReviewList\Get\OzonReviewDTO;
 use BaksDev\Ozon\Support\Api\ReviewList\Get\OzonReviewListRequest;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
@@ -44,11 +45,16 @@ class OzonReviewListRequestTest extends KernelTestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$authorization = new OzonAuthorizationToken(
-            new UserProfileUid(),
+        self::$Authorization = new OzonAuthorizationToken(
+            new UserProfileUid('018d464d-c67a-7285-8192-7235b0510924'),
             $_SERVER['TEST_OZON_TOKEN'],
+            TypeProfileFbsOzon::TYPE,
             $_SERVER['TEST_OZON_CLIENT'],
-            $_SERVER['TEST_OZON_WAREHOUSE']
+            $_SERVER['TEST_OZON_WAREHOUSE'],
+            '10',
+            0,
+            false,
+            false,
         );
     }
 

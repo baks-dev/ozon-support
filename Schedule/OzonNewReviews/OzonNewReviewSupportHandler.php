@@ -28,7 +28,7 @@ namespace BaksDev\Ozon\Support\Schedule\OzonNewReviews;
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\AllProfileToken\AllProfileOzonTokenInterface;
-use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonReviewList\GetOzonReviewListMessage;
+use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonReviewList\OzonReviewListMessage;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
@@ -36,7 +36,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
  * Запускаем получение отзывов из Ozon
- * next @see OzonReviewsDispatcher
+ * next @see OzonReviewListDispatcher
  */
 #[AsMessageHandler]
 final readonly class OzonNewReviewSupportHandler
@@ -69,7 +69,7 @@ final readonly class OzonNewReviewSupportHandler
         foreach($profiles as $profile)
         {
             $this->messageDispatch->dispatch(
-                message: new GetOzonReviewListMessage($profile),
+                message: new OzonReviewListMessage($profile),
                 stamps: [new MessageDelay('5 seconds')],
                 transport: (string) $profile,
             );

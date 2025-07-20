@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Api\Question\Tests;
 
+use BaksDev\Ozon\Orders\Type\ProfileType\TypeProfileFbsOzon;
 use BaksDev\Ozon\Support\Api\Question\PostOzonQuestionsViewedRequest;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
@@ -43,10 +44,15 @@ class PostOzonQuestionViewedTest extends KernelTestCase
     public static function setUpBeforeClass(): void
     {
         self::$Authorization = new OzonAuthorizationToken(
-            new UserProfileUid(),
+            new UserProfileUid('018d464d-c67a-7285-8192-7235b0510924'),
             $_SERVER['TEST_OZON_TOKEN'],
+            TypeProfileFbsOzon::TYPE,
             $_SERVER['TEST_OZON_CLIENT'],
-            $_SERVER['TEST_OZON_WAREHOUSE']
+            $_SERVER['TEST_OZON_WAREHOUSE'],
+            '10',
+            0,
+            false,
+            false,
         );
     }
 

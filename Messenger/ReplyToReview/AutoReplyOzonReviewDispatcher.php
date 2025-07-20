@@ -27,11 +27,13 @@ namespace BaksDev\Ozon\Support\Messenger\ReplyToReview;
 
 use BaksDev\Ozon\Support\Type\OzonReviewProfileType;
 use BaksDev\Support\Answer\Service\AutoMessagesReply;
+use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\Type\Status\SupportStatus;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusOpen;
+use BaksDev\Support\UseCase\Admin\New\Invariable\SupportInvariableDTO;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportHandler;
@@ -49,8 +51,8 @@ final readonly class AutoReplyOzonReviewDispatcher
 {
     public function __construct(
         #[Target('ozonSupportLogger')] private LoggerInterface $logger,
-        private SupportHandler $supportHandler,
-        private CurrentSupportEventRepository $currentSupportEvent,
+        private SupportHandler $SupportHandler,
+        private CurrentSupportEventRepository $CurrentSupportEventRepository,
     ) {}
 
     /**
@@ -62,11 +64,11 @@ final readonly class AutoReplyOzonReviewDispatcher
     {
         $supportDTO = new SupportDTO();
 
-        $supportEvent = $this->currentSupportEvent
+        $CurrentSupportEvent = $this->CurrentSupportEventRepository
             ->forSupport($message->getId())
             ->find();
 
-        if(false === $supportEvent)
+        if(false === ($CurrentSupportEvent instanceof SupportEvent))
         {
             $this->logger->critical(
                 'ozon-support: Ошибка получения события по идентификатору :'.$message->getId(),
@@ -77,7 +79,7 @@ final readonly class AutoReplyOzonReviewDispatcher
         }
 
         // гидрируем DTO активным событием
-        $supportEvent->getDto($supportDTO);
+        $CurrentSupportEvent->getDto($supportDTO);
 
         // обрабатываем только на открытый тикет
         if(false === ($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusOpen))
@@ -87,15 +89,15 @@ final readonly class AutoReplyOzonReviewDispatcher
 
         $supportInvariableDTO = $supportDTO->getInvariable();
 
-        if(is_null($supportInvariableDTO))
+        if(false === ($supportInvariableDTO instanceof SupportInvariableDTO))
         {
             return;
         }
 
         // проверяем тип профиля у чата
-        $supportProfileType = $supportInvariableDTO->getType();
+        $TypeProfileUid = $supportInvariableDTO->getType();
 
-        if(false === $supportProfileType->equals(OzonReviewProfileType::TYPE))
+        if(false === $TypeProfileUid->equals(OzonReviewProfileType::TYPE))
         {
             return;
         }
@@ -135,7 +137,7 @@ final readonly class AutoReplyOzonReviewDispatcher
         ;
 
         // сохраняем ответ
-        $Support = $this->supportHandler->handle($supportDTO);
+        $Support = $this->SupportHandler->handle($supportDTO);
 
         if(false === ($Support instanceof Support))
         {

@@ -29,11 +29,14 @@ use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Question\PostOzonQuestionAnswerRequest;
 use BaksDev\Ozon\Support\Type\OzonQuestionProfileType;
+use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
+use BaksDev\Support\UseCase\Admin\New\Invariable\SupportInvariableDTO;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -59,11 +62,11 @@ final readonly class ReplyOzonQuestionHandler
     {
         $supportDTO = new SupportDTO();
 
-        $supportEvent = $this->currentSupportEvent
+        $CurrentSupportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
             ->find();
 
-        if(false === $supportEvent)
+        if(false === ($CurrentSupportEvent instanceof SupportEvent))
         {
             $this->logger->critical(
                 'Ошибка получения события по идентификатору :'.$message->getId(),
@@ -73,11 +76,24 @@ final readonly class ReplyOzonQuestionHandler
             return;
         }
 
-        $supportEvent->getDto($supportDTO);
+
+        $UserProfileUid = $CurrentSupportEvent->getInvariable()?->getProfile();
+
+        if(false === ($UserProfileUid instanceof UserProfileUid))
+        {
+            $this->logger->critical(
+                sprintf('ozon-support: Ошибка получения профиля по идентификатору : %s', $message->getId()));
+
+            return;
+
+        }
+
+
+        $CurrentSupportEvent->getDto($supportDTO);
 
         $SupportInvariableDTO = $supportDTO->getInvariable();
 
-        if(is_null($SupportInvariableDTO))
+        if(false === ($SupportInvariableDTO instanceof SupportInvariableDTO))
         {
             return;
         }
@@ -85,9 +101,9 @@ final readonly class ReplyOzonQuestionHandler
         /**
          * Пропускаем если тикет не является Support Question «Вопрос»
          */
-        $typeProfile = $SupportInvariableDTO->getType();
+        $TypeProfileUid = $SupportInvariableDTO->getType();
 
-        if(false === $typeProfile->equals(OzonQuestionProfileType::TYPE))
+        if(false === $TypeProfileUid->equals(OzonQuestionProfileType::TYPE))
         {
             return;
         }
@@ -132,11 +148,10 @@ final readonly class ReplyOzonQuestionHandler
          * Формируем ответ на вопрос
          */
 
-        $UserProfileUid = $SupportInvariableDTO->getProfile();
         $ticket = $SupportInvariableDTO->getTicket();
 
         $result = $this->PostOzonQuestionAnswerRequest
-            ->profile($UserProfileUid)
+            ->forTokenIdentifier($UserProfileUid)
             ->question($ticket)
             ->sku($firstMessage->getExternal())
             ->text($lastMessage->getMessage())

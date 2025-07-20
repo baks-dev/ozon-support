@@ -88,7 +88,7 @@ final class OzonQuestionDispatcher
          */
 
         $questions = $this->GetOzonQuestionsRequest
-            ->profile($message->getProfile())
+            ->forTokenIdentifier($message->getProfile())
             ->findAll();
 
         if(false === $questions->valid())
