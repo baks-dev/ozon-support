@@ -55,12 +55,12 @@ final class OzonQuestionDispatcher
 {
     public function __construct(
         #[Target('ozonSupportLogger')] private LoggerInterface $logger,
+        private readonly DeduplicatorInterface $deduplicator,
+        private readonly ExistSupportTicketInterface $ExistSupportTicketRepository,
         private readonly GetOzonQuestionsRequest $GetOzonQuestionsRequest,
         private readonly PostOzonQuestionsViewedRequest $PostOzonQuestionsViewedRequest,
         private readonly GetOzonCardNameRequest $GetOzonCardNameRequest,
-        private readonly SupportHandler $supportHandler,
-        private readonly DeduplicatorInterface $deduplicator,
-        private readonly ExistSupportTicketInterface $existSupportTicket,
+        private readonly SupportHandler $SupportHandler,
     ) {}
 
 
@@ -115,7 +115,7 @@ final class OzonQuestionDispatcher
              * Пропускаем, если указанный тикет добавлен
              * @see ExistSupportTicketInterface
              */
-            $questionExist = $this->existSupportTicket
+            $questionExist = $this->ExistSupportTicketRepository
                 ->ticket($question->getId())
                 ->exist();
 
@@ -135,7 +135,10 @@ final class OzonQuestionDispatcher
              * @see SupportInvariable
              */
 
-            $title = $this->GetOzonCardNameRequest->sku($question->getSku())->find() ?: null;
+            $title = $this->GetOzonCardNameRequest
+                ->forTokenIdentifier($message->getProfile())
+                ->sku($question->getSku())->find() ?: null;
+
             $article = false;
 
             // Используем регулярное выражение для извлечения текста до и внутри круглых скобок
@@ -192,7 +195,7 @@ final class OzonQuestionDispatcher
             /**
              * @see SupportHandler
              */
-            $handle = $this->supportHandler->handle($SupportDTO);
+            $handle = $this->SupportHandler->handle($SupportDTO);
 
             if(false === ($handle instanceof Support))
             {
@@ -207,14 +210,18 @@ final class OzonQuestionDispatcher
             $deduplicator->save();
 
             /** Добавляем в массив идентификатор ответа для отметки о прочитанном */
-            $this->PostOzonQuestionsViewedRequest->question($question->getId());
+            $this->PostOzonQuestionsViewedRequest
+                ->forTokenIdentifier($message->getProfile())
+                ->question($question->getId());
         }
 
         /**
          * Отмечаем все вопросы как прочитанными
          * @see PostOzonQuestionsViewedRequest
          */
-        $viewed = $this->PostOzonQuestionsViewedRequest->update();
+        $viewed = $this->PostOzonQuestionsViewedRequest
+            ->forTokenIdentifier($message->getProfile())
+            ->update();
 
         if(false === $viewed)
         {
