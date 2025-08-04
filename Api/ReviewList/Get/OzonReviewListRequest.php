@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Api\ReviewList\Get;
 
 use BaksDev\Ozon\Api\Ozon;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Generator;
 use InvalidArgumentException;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -80,6 +81,10 @@ final class OzonReviewListRequest extends Ozon
      */
     public function getReviewList(): false|Generator
     {
+        if(false === ($this->getProfile() instanceof UserProfileUid))
+        {
+            return false;
+        }
 
         if(false === $this->sort)
         {
