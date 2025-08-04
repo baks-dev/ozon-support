@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Api\Get\ChatList;
 
 use BaksDev\Ozon\Api\Ozon;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Generator;
 
 /**
@@ -115,6 +116,11 @@ final class GetOzonChatListRequest extends Ozon
      */
     public function getListChats(): false|Generator
     {
+        if(false === ($this->getProfile() instanceof UserProfileUid))
+        {
+            return false;
+        }
+
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',

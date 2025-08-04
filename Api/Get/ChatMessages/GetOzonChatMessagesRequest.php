@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Api\Get\ChatMessages;
 
 use BaksDev\Ozon\Api\Ozon;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Generator;
 use InvalidArgumentException;
 
@@ -116,6 +117,11 @@ final class GetOzonChatMessagesRequest extends Ozon
      */
     public function findAll(): Generator|false
     {
+        if(false === ($this->getProfile() instanceof UserProfileUid))
+        {
+            return false;
+        }
+
         // обязательно для передачи
         if(false === $this->chat)
         {

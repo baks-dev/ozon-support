@@ -19,7 +19,6 @@
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
- *
  */
 
 declare(strict_types=1);
@@ -27,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Api\ReviewInfo\Get;
 
 use BaksDev\Ozon\Api\Ozon;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 
 final class GetOzonReviewInfoRequest extends Ozon
 {
@@ -37,6 +37,11 @@ final class GetOzonReviewInfoRequest extends Ozon
      */
     public function getReviewInfo(string $reviewId): false|OzonReviewInfoDTO
     {
+
+        if(false === ($this->getProfile() instanceof UserProfileUid))
+        {
+            return false;
+        }
 
         $response = $this->TokenHttpClient()
             ->request(

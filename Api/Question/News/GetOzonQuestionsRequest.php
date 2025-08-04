@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Api\Question\News;
 
 use BaksDev\Ozon\Api\Ozon;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Generator;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -53,6 +54,11 @@ final class GetOzonQuestionsRequest extends Ozon
      */
     public function findAll(): false|Generator
     {
+        if(false === ($this->getProfile() instanceof UserProfileUid))
+        {
+            return false;
+        }
+
         while(true)
         {
             $json = [

@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Api\Get\ChatFile;
 
 use BaksDev\Ozon\Api\Ozon;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use InvalidArgumentException;
 
 final class GetOzonFileChatRequest extends Ozon
@@ -61,6 +62,11 @@ final class GetOzonFileChatRequest extends Ozon
 
     public function get(): string|false
     {
+        if(false === ($this->getProfile() instanceof UserProfileUid))
+        {
+            return false;
+        }
+
         if(false === ($this->ticket || $this->message || $this->file))
         {
             throw new InvalidArgumentException('Invalid Argument Parameters');
