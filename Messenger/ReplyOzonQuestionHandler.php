@@ -29,6 +29,7 @@ use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Question\PostOzonQuestionAnswerRequest;
 use BaksDev\Ozon\Support\Type\OzonQuestionProfileType;
+use BaksDev\Ozon\Type\Id\OzonTokenUid;
 use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
@@ -150,12 +151,17 @@ final readonly class ReplyOzonQuestionHandler
 
         $ticket = $SupportInvariableDTO->getTicket();
 
+        $token = $SupportDTO->getToken()->getValue();
+        $OzonTokenUid = $token ? new OzonTokenUid($token) : $UserProfileUid;
+
+
         $result = $this->PostOzonQuestionAnswerRequest
-            ->forTokenIdentifier($UserProfileUid)
+            ->forTokenIdentifier($OzonTokenUid)
             ->question($ticket)
             ->sku($firstMessage->getExternal())
             ->text($lastMessage->getMessage())
             ->create();
+
 
         if(false === $result)
         {

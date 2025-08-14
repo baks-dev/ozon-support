@@ -123,6 +123,7 @@ final class PostOzonQuestionAnswerRequest extends Ozon
                         $result,
                         $json,
                     ]);
+
                 return true;
             }
 

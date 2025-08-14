@@ -77,9 +77,10 @@ final class OzonReviewListRequest extends Ozon
 
     /**
      * Возвращает список отзывов
+     *
      * @see https://docs.ozon.ru/api/seller/#operation/ReviewAPI_ReviewList
      */
-    public function getReviewList(): false|Generator
+    public function getReviewList(): bool|Generator
     {
         if(false === ($this->getProfile() instanceof UserProfileUid))
         {
@@ -100,9 +101,9 @@ final class OzonReviewListRequest extends Ozon
 
         while(true)
         {
-            $cacheKey = md5($this->getProfile().$this->lastId.self::class);
+            $cacheKey = md5($this->getIdentifier().$this->lastId.self::class);
 
-            $result = $cache->get($cacheKey, function(ItemInterface $item): array|false {
+            $result = $cache->get($cacheKey, function(ItemInterface $item): array|bool {
 
                 $item->expiresAfter(1);
 
@@ -116,22 +117,23 @@ final class OzonReviewListRequest extends Ozon
                                 "limit" => 100,
                                 "sort_dir" => $this->sort,
                                 "status" => $this->status,
-                            ]
-                        ]
+                            ],
+                        ],
                     );
 
                 $result = $response->toArray(false);
 
                 if($response->getStatusCode() !== 200)
                 {
-                    $message = sprintf('ozon-support: Код ответа: %s. Ошибка получения списка отзывов от Ozon Seller API', $response->getStatusCode());
+                    if(str_contains($result['message'], 'Premium Plus subscription'))
+                    {
+                        return true;
+                    }
 
                     $this->logger->critical(
-                        message: $message,
-                        context: [
-                            self::class.':'.__LINE__,
-                            $result
-                        ]);
+                        message: sprintf('ozon-support: Код ответа: %s. Ошибка получения списка отзывов от Ozon Seller API', $response->getStatusCode()),
+                        context: [self::class.':'.__LINE__, $result,],
+                    );
 
                     return false;
                 }
@@ -144,7 +146,7 @@ final class OzonReviewListRequest extends Ozon
                         message: $message,
                         context: [
                             self::class.':'.__LINE__,
-                            $result
+                            $result,
                         ]);
 
                     return false;
@@ -155,9 +157,9 @@ final class OzonReviewListRequest extends Ozon
                 return $result;
             });
 
-            if(false === $result)
+            if(true === is_bool($result))
             {
-                return false;
+                return $result;
             }
 
             foreach($result['reviews'] as $review)

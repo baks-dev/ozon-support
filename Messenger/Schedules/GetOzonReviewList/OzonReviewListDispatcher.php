@@ -88,13 +88,13 @@ final readonly class OzonReviewListDispatcher
                     'ozon-support',
                 );
 
-                return;
+                continue;
             }
 
             // при отсутствии необработанных отзывов - прерываем работу
             if(false === $reviewList->valid())
             {
-                return;
+                continue;
             }
 
             // каждый отзыв - это наш чат

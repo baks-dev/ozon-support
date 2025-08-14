@@ -29,6 +29,7 @@ use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\ReviewComments\Post\PostOzonReviewCommentRequest;
 use BaksDev\Ozon\Support\Type\OzonReviewProfileType;
+use BaksDev\Ozon\Type\Id\OzonTokenUid;
 use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
@@ -119,9 +120,13 @@ final readonly class ReplyOzonReviewDispatcher
             return;
         }
 
+        $token = $SupportDTO->getToken()->getValue();
+        $OzonTokenUid = $token ? new OzonTokenUid($token) : $UserProfileUid;
+
+
         /** Отправляем ответ на отзыв и меняем его статус на "обработанный" */
         $request = $this->postCommentRequest
-            ->forTokenIdentifier($UserProfileUid)
+            ->forTokenIdentifier($OzonTokenUid)
             ->reviewId($SupportInvariableDTO->getTicket())
             ->text($lastMessage->getMessage())
             ->markAsProcessed()
