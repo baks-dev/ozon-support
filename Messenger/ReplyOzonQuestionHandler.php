@@ -60,7 +60,6 @@ final readonly class ReplyOzonQuestionHandler
      */
     public function __invoke(SupportMessage $message): void
     {
-        $supportDTO = new SupportDTO();
 
         $CurrentSupportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
@@ -89,9 +88,10 @@ final readonly class ReplyOzonQuestionHandler
         }
 
 
-        $CurrentSupportEvent->getDto($supportDTO);
+        /** @var SupportDTO $SupportDTO */
+        $SupportDTO = $CurrentSupportEvent->getDto(SupportDTO::class);
 
-        $SupportInvariableDTO = $supportDTO->getInvariable();
+        $SupportInvariableDTO = $SupportDTO->getInvariable();
 
         if(false === ($SupportInvariableDTO instanceof SupportInvariableDTO))
         {
@@ -111,7 +111,7 @@ final readonly class ReplyOzonQuestionHandler
         /**
          * Ответ только на закрытый тикет
          */
-        if(false === ($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose))
+        if(false === ($SupportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose))
         {
             return;
         }
@@ -121,7 +121,7 @@ final readonly class ReplyOzonQuestionHandler
          * @var SupportMessageDTO $firstMessage
          */
 
-        $firstMessage = $supportDTO->getMessages()->first();
+        $firstMessage = $SupportDTO->getMessages()->first();
 
         // Первый элемент имеет SKU товара для ответа
         if(is_null($firstMessage->getExternal()))
@@ -135,7 +135,7 @@ final readonly class ReplyOzonQuestionHandler
          * @var SupportMessageDTO $lastMessage
          */
 
-        $lastMessage = $supportDTO->getMessages()->last();
+        $lastMessage = $SupportDTO->getMessages()->last();
 
         // проверяем наличие внешнего ID - для наших ответов его быть не должно
         if(null !== $lastMessage->getExternal())

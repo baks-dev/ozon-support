@@ -28,6 +28,7 @@ namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonReviewList;
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
+use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\ReviewList\Get\OzonReviewListRequest;
 use BaksDev\Ozon\Support\Messenger\GetOzonReviewInfo\GetOzonReviewInfoMessage;
 use BaksDev\Support\Repository\ExistTicket\ExistSupportTicketInterface;
@@ -38,7 +39,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * - на каждый отзыв кидаем сообщение для его обработки
  *
  * prev @see OzonNewReviewSupportHandler
- * next @see OzonReviewInfoDispatcher
+ * next @see NewOzonReviewInfoDispatcher
  */
 #[AsMessageHandler]
 final readonly class OzonReviewListDispatcher
@@ -47,46 +48,69 @@ final readonly class OzonReviewListDispatcher
     public function __construct(
         private MessageDispatchInterface $messageDispatch,
         private OzonReviewListRequest $reviewListRequest,
+        private OzonTokensByProfileInterface $OzonTokensByProfile,
     ) {}
 
     public function __invoke(OzonReviewListMessage $message): void
     {
 
-        /**
-         * Получаем список отзывов:
-         * - без ответа (UNPROCESSED)
-         * - от новых к старым
-         */
-        $reviewList = $this->reviewListRequest
-            ->forTokenIdentifier($message->getProfile())
-            ->status(OzonReviewListRequest::STATUS_UNPROCESSED)
-            ->sort(OzonReviewListRequest::SORT_DESC)
-            ->getReviewList();
+        /** Получаем все токены профиля */
 
-        // при ошибке от Ozon API - повторяем запрос через 10 минут
-        if(false === $reviewList)
-        {
-            $this->messageDispatch->dispatch(
-                $message,
-                [new MessageDelay('10 minutes')],
-                'ozon-support',
-            );
-            return;
-        }
+        $tokensByProfile = $this->OzonTokensByProfile
+            ->onlyCardUpdate()
+            ->findAll($message->getProfile());
 
-        // при отсутствии необработанных отзывов - прерываем работу
-        if(false === $reviewList->valid())
+        if(false === $tokensByProfile || false === $tokensByProfile->valid())
         {
             return;
         }
 
-        // каждый отзыв - это наш чат
-        foreach($reviewList as $review)
+        foreach($tokensByProfile as $OzonTokenUid)
         {
-            $this->messageDispatch->dispatch(
-                message: new GetOzonReviewInfoMessage($message->getProfile(), $review->getId()),
-                transport: 'ozon-support',
-            );
+
+            /**
+             * Получаем список отзывов:
+             * - без ответа (UNPROCESSED)
+             * - от новых к старым
+             */
+            $reviewList = $this->reviewListRequest
+                ->forTokenIdentifier($OzonTokenUid)
+                ->status(OzonReviewListRequest::STATUS_UNPROCESSED)
+                ->sort(OzonReviewListRequest::SORT_DESC)
+                ->getReviewList();
+
+            // при ошибке от Ozon API - повторяем запрос через 10 минут
+            if(false === $reviewList)
+            {
+                $this->messageDispatch->dispatch(
+                    $message,
+                    [new MessageDelay('10 minutes')],
+                    'ozon-support',
+                );
+
+                return;
+            }
+
+            // при отсутствии необработанных отзывов - прерываем работу
+            if(false === $reviewList->valid())
+            {
+                return;
+            }
+
+            // каждый отзыв - это наш чат
+            foreach($reviewList as $review)
+            {
+                $GetOzonReviewInfoMessage = new GetOzonReviewInfoMessage(
+                    profile: $message->getProfile(),
+                    identifier: $OzonTokenUid,
+                    review: $review->getId(),
+                );
+
+                $this->messageDispatch->dispatch(
+                    message: $GetOzonReviewInfoMessage,
+                    transport: 'ozon-support',
+                );
+            }
         }
     }
 }

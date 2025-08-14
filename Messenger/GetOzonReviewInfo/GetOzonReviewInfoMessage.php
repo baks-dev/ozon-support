@@ -25,19 +25,27 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\GetOzonReviewInfo;
 
+use BaksDev\Ozon\Type\Id\OzonTokenUid;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 
-/** @see OzonReviewInfoDispatcher */
+/** @see NewOzonReviewInfoDispatcher */
 final class GetOzonReviewInfoMessage
 {
     private string $profile;
 
-    private string $reviewId;
+    private string $identifier;
 
-    public function __construct(UserProfileUid|string $profile, string $reviewId)
+    private string $review;
+
+    public function __construct(
+        UserProfileUid|string $profile,
+        OzonTokenUid|string $identifier,
+        string $review
+    )
     {
         $this->profile = (string) $profile;
-        $this->reviewId = $reviewId;
+        $this->identifier = (string) $identifier;
+        $this->review = $review;
     }
 
     /** Идентификатор профиля пользователя */
@@ -46,9 +54,14 @@ final class GetOzonReviewInfoMessage
         return new UserProfileUid($this->profile);
     }
 
+    public function getIdentifier(): OzonTokenUid
+    {
+        return new OzonTokenUid($this->identifier);
+    }
+
     /** Идентификатор отзыва в Ozon Seller Api */
     public function getReviewId(): string
     {
-        return $this->reviewId;
+        return $this->review;
     }
 }

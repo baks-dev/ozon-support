@@ -28,6 +28,7 @@ namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonQuestion;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Ozon\Products\Api\Card\Identifier\GetOzonCardNameRequest;
+use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\Question\News\GetOzonQuestionsRequest;
 use BaksDev\Ozon\Support\Api\Question\News\OzonQuestionDTO;
 use BaksDev\Ozon\Support\Api\Question\PostOzonQuestionsViewedRequest;
@@ -61,6 +62,7 @@ final class OzonQuestionDispatcher
         private readonly PostOzonQuestionsViewedRequest $PostOzonQuestionsViewedRequest,
         private readonly GetOzonCardNameRequest $GetOzonCardNameRequest,
         private readonly SupportHandler $SupportHandler,
+        private OzonTokensByProfileInterface $OzonTokensByProfile,
     ) {}
 
 
@@ -82,92 +84,114 @@ final class OzonQuestionDispatcher
 
         $DeduplicatorExecuted->save();
 
-        /**
-         * Получаем новые вопросы
-         * @see GetOzonQuestionsRequest
-         */
 
-        $questions = $this->GetOzonQuestionsRequest
-            ->forTokenIdentifier($message->getProfile())
-            ->findAll();
+        $profile = $message->getProfile();
 
-        if(false === $questions->valid())
+        /** Получаем все токены профиля */
+
+        $tokensByProfile = $this->OzonTokensByProfile
+            ->onlyCardUpdate()
+            ->findAll($message->getProfile());
+
+        if(false === $tokensByProfile || false === $tokensByProfile->valid())
         {
-            $DeduplicatorExecuted->delete();
             return;
         }
 
-        $this->deduplicator
-            ->expiresAfter('1 day');
 
-        /** @see OzonQuestionDTO $question */
-        foreach($questions as $question)
+        foreach($tokensByProfile as $OzonTokenUid)
         {
-            $deduplicator = $this->deduplicator
-                ->deduplication([$question->getId(), self::class]);
+            /**
+             * Получаем новые вопросы
+             *
+             * @see GetOzonQuestionsRequest
+             */
 
-            if($deduplicator->isExecuted())
+            $questions = $this->GetOzonQuestionsRequest
+                ->forTokenIdentifier($OzonTokenUid)
+                ->findAll();
+
+            if(false === $questions->valid())
             {
+                $DeduplicatorExecuted->delete();
                 continue;
             }
 
-            /**
-             * Пропускаем, если указанный тикет добавлен
-             * @see ExistSupportTicketInterface
-             */
-            $questionExist = $this->ExistSupportTicketRepository
-                ->ticket($question->getId())
-                ->exist();
 
-            if($questionExist)
+            /** @see OzonQuestionDTO $question */
+            foreach($questions as $question)
             {
-                continue;
-            }
+                $deduplicator = $this->deduplicator
+                    ->expiresAfter('1 day')
+                    ->deduplication([$question->getId(), self::class]);
 
-            /**
-             * @see SupportEvent
-             */
-            $SupportDTO = new SupportDTO()
+                if($deduplicator->isExecuted())
+                {
+                    continue;
+                }
+
+                /**
+                 * Пропускаем, если указанный тикет добавлен
+                 *
+                 * @see ExistSupportTicketInterface
+                 */
+                $questionExist = $this->ExistSupportTicketRepository
+                    ->ticket($question->getId())
+                    ->exist();
+
+                if($questionExist)
+                {
+                    continue;
+                }
+
+                /**
+                 * @see SupportEvent
+                 */
+                $SupportDTO = new SupportDTO() // done
                 ->setPriority(new SupportPriority(SupportPriorityLow::class)) // CustomerMessage - высокий приоритет
                 ->setStatus(new SupportStatus(SupportStatusOpen::class)); // Для нового сообщения - StatusOpen
 
-            /**
-             * @see SupportInvariable
-             */
+                /** Присваиваем токен для последующего поиска */
+                $SupportDTO->getToken()->setValue($OzonTokenUid);
 
-            $title = $this->GetOzonCardNameRequest
-                ->forTokenIdentifier($message->getProfile())
-                ->sku($question->getSku())->find() ?: null;
 
-            $article = false;
+                /**
+                 * @see SupportInvariable
+                 */
 
-            // Используем регулярное выражение для извлечения текста до и внутри круглых скобок
-            preg_match('/^(.*?)s*\((.*?)\)$/', (string) $title, $matches);
+                $title = $this->GetOzonCardNameRequest
+                    ->forTokenIdentifier($OzonTokenUid)
+                    ->sku($question->getSku())->find() ?: null;
 
-            if(count($matches) === 3)
-            {
-                $title = trim($matches[1]); // Текст до круглых скобок
-                $article = trim($matches[2]); // Текст внутри круглых скобок
-            }
+                $article = false;
 
-            $supportInvariableDTO = new SupportInvariableDTO()
-                ->setProfile($message->getProfile())
-                ->setType(new TypeProfileUid(OzonQuestionProfileType::class))
-                ->setTicket($question->getId())
-                ->setTitle($title);
+                // Используем регулярное выражение для извлечения текста до и внутри круглых скобок
+                preg_match('/^(.*?)s*\((.*?)\)$/', (string) $title, $matches);
 
-            $SupportDTO->setInvariable($supportInvariableDTO);
+                if(count($matches) === 3)
+                {
+                    $title = trim($matches[1]); // Текст до круглых скобок
+                    $article = trim($matches[2]); // Текст внутри круглых скобок
+                }
 
-            /**
-             * @see SupportMessage
-             */
+                $supportInvariableDTO = new SupportInvariableDTO()
+                    ->setProfile($message->getProfile())
+                    ->setType(new TypeProfileUid(OzonQuestionProfileType::class))
+                    ->setTicket($question->getId())
+                    ->setTitle($title);
 
-            $text = $question->getText();
+                $SupportDTO->setInvariable($supportInvariableDTO);
 
-            /** Добавляем к тексту ссылку с артикулом */
-            if($article)
-            {
-                $article = sprintf('<p><article 
+                /**
+                 * @see SupportMessage
+                 */
+
+                $text = $question->getText();
+
+                /** Добавляем к тексту ссылку с артикулом */
+                if($article)
+                {
+                    $article = sprintf('<p><article 
                         class="d-flex align-items-center gap-1 text-primary pointer copy small"
                         data-copy="%s"
                         ><svg version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="14" height="14" fill="currentColor" viewBox="0 0 115.77 122.88">
@@ -175,57 +199,59 @@ final class OzonQuestionDispatcher
                         </svg> 
                         Артикул: %s</article></p>', $article, $article);
 
-                $text .= str_replace(PHP_EOL, " ", $article);
+                    $text .= str_replace(PHP_EOL, " ", $article);
+                }
+
+
+                // $text .= sprintf('<p><a target="_blank" href="https://ozon.ru/product/%s">Перейти на Ozon</a></p>', $question->getSku());
+
+                /** Добавляем ссылку на страницу товара */
+
+                $SupportMessageDTO = new SupportMessageDTO()
+                    ->setExternal($question->getSku()) // Идентификатор продукта SKU
+                    ->setName($question->getName()) // Имя автора вопроса.
+                    ->setMessage($text) // Текст вопроса
+                    ->setDate($question->getCreated()) // Дата вопроса
+                    ->setInMessage();
+
+                $SupportDTO->addMessage($SupportMessageDTO);
+
+                /**
+                 * @see SupportHandler
+                 */
+                $handle = $this->SupportHandler->handle($SupportDTO);
+
+                if(false === ($handle instanceof Support))
+                {
+                    $this->logger->critical(
+                        sprintf('avito-support: Ошибка %s при добавлении вопроса', $handle),
+                        [self::class.':'.__LINE__],
+                    );
+
+                    continue;
+                }
+
+                $deduplicator->save();
+
+                /** Добавляем в массив идентификатор ответа для отметки о прочитанном */
+                $this->PostOzonQuestionsViewedRequest
+                    ->forTokenIdentifier($OzonTokenUid)
+                    ->question($question->getId());
             }
-
-
-            // $text .= sprintf('<p><a target="_blank" href="https://ozon.ru/product/%s">Перейти на Ozon</a></p>', $question->getSku());
-
-            /** Добавляем ссылку на страницу товара */
-
-            $SupportMessageDTO = new SupportMessageDTO()
-                ->setExternal($question->getSku()) // Идентификатор продукта SKU
-                ->setName($question->getName()) // Имя автора вопроса.
-                ->setMessage($text) // Текст вопроса
-                ->setDate($question->getCreated()) // Дата вопроса
-                ->setInMessage();
-
-            $SupportDTO->addMessage($SupportMessageDTO);
 
             /**
-             * @see SupportHandler
+             * Отмечаем все вопросы как прочитанными
+             *
+             * @see PostOzonQuestionsViewedRequest
              */
-            $handle = $this->SupportHandler->handle($SupportDTO);
+            $viewed = $this->PostOzonQuestionsViewedRequest
+                ->forTokenIdentifier($OzonTokenUid)
+                ->update();
 
-            if(false === ($handle instanceof Support))
+            if(false === $viewed)
             {
-                $this->logger->critical(
-                    sprintf('avito-support: Ошибка %s при добавлении вопроса', $handle),
-                    [self::class.':'.__LINE__]
-                );
-
-                continue;
+                $this->logger->warning('Ошибка при обновлении статусов вопросов');
             }
-
-            $deduplicator->save();
-
-            /** Добавляем в массив идентификатор ответа для отметки о прочитанном */
-            $this->PostOzonQuestionsViewedRequest
-                ->forTokenIdentifier($message->getProfile())
-                ->question($question->getId());
-        }
-
-        /**
-         * Отмечаем все вопросы как прочитанными
-         * @see PostOzonQuestionsViewedRequest
-         */
-        $viewed = $this->PostOzonQuestionsViewedRequest
-            ->forTokenIdentifier($message->getProfile())
-            ->update();
-
-        if(false === $viewed)
-        {
-            $this->logger->warning('Ошибка при обновлении статусов вопросов');
         }
 
         $DeduplicatorExecuted->delete();

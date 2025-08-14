@@ -63,7 +63,6 @@ final readonly class MarkReadingOzonMessageChatDispatcher
      */
     public function __invoke(SupportMessage $message): void
     {
-        $supportDTO = new SupportDTO();
 
         $CurrentSupportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
@@ -75,6 +74,7 @@ final readonly class MarkReadingOzonMessageChatDispatcher
                 sprintf('ozon-support: Ошибка получения события по идентификатору : %s', $message->getId()),
                 [self::class.':'.__LINE__],
             );
+
             return;
         }
 
@@ -89,8 +89,10 @@ final readonly class MarkReadingOzonMessageChatDispatcher
 
         }
 
-        $CurrentSupportEvent->getDto($supportDTO);
-        $SupportInvariableDTO = $supportDTO->getInvariable();
+
+        $SupportDTO = $CurrentSupportEvent->getDto(SupportDTO::class);
+
+        $SupportInvariableDTO = $SupportDTO->getInvariable();
 
         /** Если событие изменилось - Invariable равен null */
         if(false === ($SupportInvariableDTO instanceof SupportInvariableDTO))

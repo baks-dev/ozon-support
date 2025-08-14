@@ -30,6 +30,7 @@ use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\Post\SendMessage\SendOzonMessageChatRequest;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
+use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
 use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
@@ -61,13 +62,12 @@ final readonly class SendOzonMessageChatDispatcher
      */
     public function __invoke(SupportMessage $message): void
     {
-        $supportDTO = new SupportDTO();
 
         $CurrentSupportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
             ->find();
 
-        if(false === $CurrentSupportEvent)
+        if(false === ($CurrentSupportEvent instanceof SupportEvent))
         {
             $this->logger->critical(
                 'ozon-support: Ошибка получения события по идентификатору :'.$message->getId(),
@@ -88,10 +88,11 @@ final readonly class SendOzonMessageChatDispatcher
 
         }
 
+        /** @var SupportDTO $SupportDTO */
 
-        $CurrentSupportEvent->getDto($supportDTO);
+        $SupportDTO = $CurrentSupportEvent->getDto(SupportDTO::class);
 
-        $SupportInvariableDTO = $supportDTO->getInvariable();
+        $SupportInvariableDTO = $SupportDTO->getInvariable();
 
         if(false === ($SupportInvariableDTO instanceof SupportInvariableDTO))
         {
@@ -107,13 +108,13 @@ final readonly class SendOzonMessageChatDispatcher
         }
 
         /** Проверяем что чат закрыт */
-        if(false === $supportDTO->getStatus()->equals(SupportStatusClose::class))
+        if(false === $SupportDTO->getStatus()->equals(SupportStatusClose::class))
         {
             return;
         }
 
         /** @var SupportMessageDTO $lastMessage */
-        $lastMessage = $supportDTO->getMessages()->last();
+        $lastMessage = $SupportDTO->getMessages()->last();
 
         // проверяем наличие внешнего ID - для наших ответов его быть не должно
         if(null !== $lastMessage->getExternal())

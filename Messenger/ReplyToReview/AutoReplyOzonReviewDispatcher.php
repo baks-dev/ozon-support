@@ -43,7 +43,7 @@ use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- * preview @see OzonReviewInfoDispatcher
+ * preview @see NewOzonReviewInfoDispatcher
  * next @see ReplyOzonReviewDispatcher
  */
 #[AsMessageHandler]
@@ -62,8 +62,6 @@ final readonly class AutoReplyOzonReviewDispatcher
      */
     public function __invoke(AutoReplyOzonReviewMessage $message): void
     {
-        $supportDTO = new SupportDTO();
-
         $CurrentSupportEvent = $this->CurrentSupportEventRepository
             ->forSupport($message->getId())
             ->find();
@@ -78,16 +76,17 @@ final readonly class AutoReplyOzonReviewDispatcher
             return;
         }
 
-        // гидрируем DTO активным событием
-        $CurrentSupportEvent->getDto($supportDTO);
+
+        /** @var SupportDTO $SupportDTO */
+        $SupportDTO = $CurrentSupportEvent->getDto(SupportDTO::class);
 
         // обрабатываем только на открытый тикет
-        if(false === ($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusOpen))
+        if(false === ($SupportDTO->getStatus()->getSupportStatus() instanceof SupportStatusOpen))
         {
             return;
         }
 
-        $supportInvariableDTO = $supportDTO->getInvariable();
+        $supportInvariableDTO = $SupportDTO->getInvariable();
 
         if(false === ($supportInvariableDTO instanceof SupportInvariableDTO))
         {
@@ -131,13 +130,13 @@ final readonly class AutoReplyOzonReviewDispatcher
             ->setDate(new DateTimeImmutable('now'))
             ->setOutMessage();
 
-        $supportDTO
+        $SupportDTO
             ->setStatus(new SupportStatus(SupportStatusClose::PARAM)) // закрываем чат
             ->addMessage($supportMessageDTO) // добавляем сформированное сообщение
         ;
 
         // сохраняем ответ
-        $Support = $this->SupportHandler->handle($supportDTO);
+        $Support = $this->SupportHandler->handle($SupportDTO);
 
         if(false === ($Support instanceof Support))
         {

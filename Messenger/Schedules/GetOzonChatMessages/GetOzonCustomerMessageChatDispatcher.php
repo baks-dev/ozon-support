@@ -74,21 +74,24 @@ final class GetOzonCustomerMessageChatDispatcher
         $ticket = $message->getChatId();
 
         /** SupportEvent */
-        $supportDTO = new SupportDTO();
-        $supportDTO->setPriority(new SupportPriority(SupportPriorityLow::class)); // CustomerMessage - высокий приоритет
-        $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::class)); // Для нового сообщения - StatusOpen
+        $SupportDTO = new SupportDTO() // done
+        ->setPriority(new SupportPriority(SupportPriorityLow::class)) // CustomerMessage - высокий приоритет
+        ->setStatus(new SupportStatus(SupportStatusOpen::class)); // Для нового сообщения - StatusOpen
+
+        /** Присваиваем токен для последующего поиска */
+        $SupportDTO->getToken()->setValue($message->getIdentifier());
 
         /** SupportInvariable */
-        $supportInvariableDTO = new SupportInvariableDTO();
-        $supportInvariableDTO->setProfile($message->getProfile());
-        $supportInvariableDTO->setType(new TypeProfileUid(OzonSupportProfileType::TYPE));
-        $supportInvariableDTO->setTicket($message->getChatId());
+        $supportInvariableDTO = new SupportInvariableDTO()
+            ->setProfile($message->getProfile())
+            ->setType(new TypeProfileUid(OzonSupportProfileType::TYPE))
+            ->setTicket($message->getChatId());
 
         /** Сообщения чата */
 
         // получаем массив сообщений из чата
         $messagesChat = $this->chatHistoryRequest
-            ->forTokenIdentifier($message->getProfile())
+            ->forTokenIdentifier($message->getIdentifier())
             ->chatId($ticket)
             ->sortByNew()
             ->limit(50)
@@ -107,7 +110,7 @@ final class GetOzonCustomerMessageChatDispatcher
             ->find();
 
         /** Пересохраняю событие с новыми данными */
-        !($support instanceof SupportEvent) ?: $support->getDto($supportDTO);
+        false === ($support instanceof SupportEvent) ?: $support->getDto($SupportDTO);
 
         /** Устанавливаем заголовок чата - выполнится только один раз при сохранении чата */
         if(false === $support)
@@ -150,7 +153,7 @@ final class GetOzonCustomerMessageChatDispatcher
             $supportInvariableDTO->setTitle($title);
         }
 
-        $supportDTO->setInvariable($supportInvariableDTO);
+        $SupportDTO->setInvariable($supportInvariableDTO);
 
         /** @var OzonMessageChatDTO $chatMessage */
         foreach($messagesChat as $chatMessage)
@@ -204,8 +207,8 @@ final class GetOzonCustomerMessageChatDispatcher
             }
 
             // при добавлении нового сообщения открываем чат заново
-            $supportDTO->setStatus(new SupportStatus(SupportStatusOpen::class));
-            $supportDTO->addMessage($supportMessageDTO);
+            $SupportDTO->setStatus(new SupportStatus(SupportStatusOpen::class));
+            $SupportDTO->addMessage($supportMessageDTO);
 
             $this->isAddMessage ?: $this->isAddMessage = true;
             $deduplicator->save();
@@ -214,7 +217,7 @@ final class GetOzonCustomerMessageChatDispatcher
         /** Сохраняем, если имеются новые сообщения в массиве */
         if(true === $this->isAddMessage)
         {
-            $handle = $this->supportHandler->handle($supportDTO);
+            $handle = $this->supportHandler->handle($SupportDTO);
 
             if(false === $handle instanceof Support)
             {
@@ -222,8 +225,8 @@ final class GetOzonCustomerMessageChatDispatcher
                     sprintf('ozon-support: Ошибка %s при создании/обновлении чата поддержки', $handle),
                     [
                         self::class.':'.__LINE__,
-                        $message->getProfile(),
-                        $supportDTO->getInvariable()?->getTicket(),
+                        var_export($message, true),
+                        $SupportDTO->getInvariable()?->getTicket(),
                     ],
                 );
             }

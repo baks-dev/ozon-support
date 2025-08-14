@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList;
 
 use BaksDev\Core\Messenger\MessageDispatchInterface;
+use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\Get\ChatList\GetOzonChatListRequest;
 use BaksDev\Ozon\Support\Api\Get\ChatList\OzonChatDTO;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatMessages\GetOzonCustomerMessageChatMessage;
@@ -48,52 +49,73 @@ final readonly class GetOzonChatListDispatcher
     public function __construct(
         private MessageDispatchInterface $messageDispatch,
         private GetOzonChatListRequest $ozonChatListRequest,
+        private OzonTokensByProfileInterface $OzonTokensByProfile,
     ) {}
 
     public function __invoke(GetOzonChatListMessage $message): void
     {
         $profile = $message->getProfile();
 
-        /**
-         * Получаем массив чатов:
-         * - открытые
-         * - с непрочитанными сообщениями
-         */
-        $listChats = $this->ozonChatListRequest
-            ->forTokenIdentifier($profile)
-            ->opened()
-            ->unreadMessageOnly()
-            ->getListChats();
+        /** Получаем все токены профиля */
 
-        // в случае ошибки при запросе
-        if(false === $listChats)
+        $tokensByProfile = $this->OzonTokensByProfile
+            ->onlyCardUpdate()
+            ->findAll($message->getProfile());
+
+        if(false === $tokensByProfile || false === $tokensByProfile->valid())
         {
             return;
         }
 
-        // если список чатов пустой
-        if(false === $listChats->valid())
+        foreach($tokensByProfile as $OzonTokenUid)
         {
-            return;
-        }
+            /**
+             * Получаем массив чатов:
+             * - открытые
+             * - с непрочитанными сообщениями
+             */
+            $listChats = $this->ozonChatListRequest
+                ->forTokenIdentifier($OzonTokenUid)
+                ->opened()
+                ->unreadMessageOnly()
+                ->getListChats();
 
-        // только чаты с покупателями
-        $customerChats = array_filter(iterator_to_array($listChats), function(OzonChatDTO $chat) {
-            return $chat->getType() === 'Buyer_Seller';
-        });
+            // в случае ошибки при запросе
+            if(false === $listChats)
+            {
+                return;
+            }
 
-        if(empty($customerChats))
-        {
-            return;
-        }
+            // если список чатов пустой
+            if(false === $listChats->valid())
+            {
+                return;
+            }
 
-        /** @var OzonChatDTO $customerChat */
-        foreach($customerChats as $customerChat)
-        {
-            $this->messageDispatch->dispatch(
-                message: new GetOzonCustomerMessageChatMessage($customerChat->getId(), $profile),
-                transport: (string) $profile,
-            );
+            // только чаты с покупателями
+            $customerChats = array_filter(iterator_to_array($listChats), static function(OzonChatDTO $chat) {
+                return $chat->getType() === 'Buyer_Seller';
+            });
+
+            if(empty($customerChats))
+            {
+                return;
+            }
+
+            /** @var OzonChatDTO $customerChat */
+            foreach($customerChats as $customerChat)
+            {
+                $GetOzonCustomerMessageChatMessage = new GetOzonCustomerMessageChatMessage(
+                    chatId: $customerChat->getId(),
+                    profile: $profile,
+                    identifier: $OzonTokenUid,
+                );
+
+                $this->messageDispatch->dispatch(
+                    message: $GetOzonCustomerMessageChatMessage,
+                    transport: (string) $profile,
+                );
+            }
         }
     }
 }

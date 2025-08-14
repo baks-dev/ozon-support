@@ -83,18 +83,18 @@ final readonly class ReplyOzonReviewDispatcher
 
         }
 
-        $supportDTO = new SupportDTO();
 
         // гидрируем DTO активным событием
-        $CurrentSupportEvent->getDto($supportDTO);
+        /** @var SupportDTO $SupportDTO */
+        $SupportDTO = $CurrentSupportEvent->getDto(SupportDTO::class);
 
         // обрабатываем только закрытые тикеты
-        if(false === ($supportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose))
+        if(false === ($SupportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose))
         {
             return;
         }
 
-        $SupportInvariableDTO = $supportDTO->getInvariable();
+        $SupportInvariableDTO = $SupportDTO->getInvariable();
 
         if(false === ($SupportInvariableDTO instanceof SupportInvariableDTO))
         {
@@ -111,7 +111,7 @@ final readonly class ReplyOzonReviewDispatcher
 
         // последнее сообщение в закрытом чате = наш ответ
         /** @var SupportMessageDTO $lastMessage */
-        $lastMessage = $supportDTO->getMessages()->last();
+        $lastMessage = $SupportDTO->getMessages()->last();
 
         // проверяем наличие внешнего ID - для наших ответов его быть не должно
         if(null !== $lastMessage->getExternal())
