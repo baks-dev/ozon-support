@@ -76,12 +76,12 @@ final class PostOzonReviewCommentRequest extends Ozon
      * Оставить комментарий на отзыв
      * @see https://docs.ozon.ru/api/seller/#operation/ReviewAPI_CommentCreate
      */
-    public function postReviewComment(): string|false
+    public function postReviewComment(): string|bool
     {
         /** Выполнять операции запроса ТОЛЬКО в PROD окружении! */
         if($this->isExecuteEnvironment() === false)
         {
-            return false;
+            return true;
         }
 
         if(false === $this->reviewId)
@@ -112,6 +112,12 @@ final class PostOzonReviewCommentRequest extends Ozon
 
         if($response->getStatusCode() !== 200)
         {
+
+            if(str_contains($result['message'], 'Premium Plus'))
+            {
+                return true;
+            }
+
             $message = sprintf('ozon-support: Код ответа: %s. Ошибка получения списка комментариев на отзыв от Ozon Seller API', $response->getStatusCode());
 
             $this->logger->critical(
