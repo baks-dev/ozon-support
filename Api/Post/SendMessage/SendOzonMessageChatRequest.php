@@ -31,6 +31,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * Отправляет сообщение в существующий чат по его идентификатору.
+ *
  * @see https://docs.ozon.ru/api/seller/#tag/ChatAPI
  */
 #[Autoconfigure(public: true)]
@@ -88,16 +89,26 @@ final class SendOzonMessageChatRequest extends Ozon
             ->request(
                 'POST',
                 '/v1/chat/send/message',
-                ["json" => $json]
+                ["json" => $json],
             );
 
         if($response->getStatusCode() !== 200)
         {
             $error = $response->toArray(false);
 
+            if(str_contains(haystack: $error['message'], needle: 'disabled'))
+            {
+                $this->logger->critical(
+                    'ozon-support: Чат отключен',
+                    [self::class.':'.__LINE__, $error, $json],
+                );
+
+                return true;
+            }
+
             $this->logger->critical(
                 'ozon-support: Ошибка отправки сообщения в существующий чат по его идентификатору',
-                [self::class.':'.__LINE__, $error, $json]
+                [self::class.':'.__LINE__, $error, $json],
             );
 
             return false;
