@@ -72,16 +72,16 @@ final readonly class ReplyOzonReviewDispatcher
             return;
         }
 
+        $OzonSupportToken = $CurrentSupportEvent->getToken()?->getValue();
 
-        $UserProfileUid = $CurrentSupportEvent->getInvariable()?->getProfile();
-
-        if(false === ($UserProfileUid instanceof UserProfileUid))
+        if(empty($OzonSupportToken))
         {
             $this->logger->critical(
-                sprintf('ozon-support: Ошибка получения профиля по идентификатору : %s', $message->getId()));
+                sprintf('ozon-support: Ошибка получения токена сообщения : %s', $message->getId()),
+                [self::class.':'.__LINE__],
+            );
 
             return;
-
         }
 
 
@@ -120,9 +120,7 @@ final readonly class ReplyOzonReviewDispatcher
             return;
         }
 
-        $token = $SupportDTO->getToken()->getValue();
-        $OzonTokenUid = $token ? new OzonTokenUid($token) : $UserProfileUid;
-
+        $OzonTokenUid = new OzonTokenUid($OzonSupportToken);
 
         /** Отправляем ответ на отзыв и меняем его статус на "обработанный" */
         $request = $this->postCommentRequest

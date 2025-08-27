@@ -30,6 +30,7 @@ use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\Post\MarkReading\MarkReadingOzonMessageChatRequest;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
+use BaksDev\Ozon\Type\Id\OzonTokenUid;
 use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
@@ -78,17 +79,17 @@ final readonly class MarkReadingOzonMessageChatDispatcher
             return;
         }
 
-        $UserProfileUid = $CurrentSupportEvent->getInvariable()?->getProfile();
+        $OzonSupportToken = $CurrentSupportEvent->getToken()?->getValue();
 
-        if(false === ($UserProfileUid instanceof UserProfileUid))
+        if(empty($OzonSupportToken))
         {
             $this->logger->critical(
-                sprintf('ozon-support: Ошибка получения профиля по идентификатору : %s', $message->getId()));
+                sprintf('ozon-support: Ошибка получения токена сообщения : %s', $message->getId()),
+                [self::class.':'.__LINE__],
+            );
 
             return;
-
         }
-
 
         $SupportDTO = $CurrentSupportEvent->getDto(SupportDTO::class);
 
@@ -125,8 +126,9 @@ final readonly class MarkReadingOzonMessageChatDispatcher
         $lastMessageId = (int) $lastMessage->getExternal();
 
         // отправляем запрос на прочтение
+        $OzonTokenUid = new OzonTokenUid($OzonSupportToken);
         $result = $this->markReadingOzonMessageChatRequest
-            ->forTokenIdentifier($UserProfileUid)
+            ->forTokenIdentifier($OzonTokenUid)
             ->chatId($SupportInvariableDTO->getTicket())
             ->fromMessage($lastMessageId)
             ->markReading();

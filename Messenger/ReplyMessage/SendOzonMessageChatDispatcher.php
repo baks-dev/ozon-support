@@ -30,6 +30,7 @@ use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\Post\SendMessage\SendOzonMessageChatRequest;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
+use BaksDev\Ozon\Type\Id\OzonTokenUid;
 use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Messenger\SupportMessage;
 use BaksDev\Support\Repository\SupportCurrentEvent\CurrentSupportEventRepository;
@@ -50,7 +51,6 @@ final readonly class SendOzonMessageChatDispatcher
         private MessageDispatchInterface $messageDispatch,
         private CurrentSupportEventRepository $currentSupportEvent,
         private SendOzonMessageChatRequest $sendMessageRequest,
-        private OzonTokensByProfileInterface $OzonTokensByProfile,
     ) {}
 
     /**
@@ -77,15 +77,16 @@ final readonly class SendOzonMessageChatDispatcher
             return;
         }
 
-        $UserProfileUid = $CurrentSupportEvent->getInvariable()?->getProfile();
+        $OzonSupportToken = $CurrentSupportEvent->getToken()?->getValue();
 
-        if(false === ($UserProfileUid instanceof UserProfileUid))
+        if(empty($OzonSupportToken))
         {
             $this->logger->critical(
-                sprintf('ozon-support: Ошибка получения профиля по идентификатору : %s', $message->getId()));
+                sprintf('ozon-support: Ошибка получения токена сообщения : %s', $message->getId()),
+                [self::class.':'.__LINE__],
+            );
 
             return;
-
         }
 
         /** @var SupportDTO $SupportDTO */
@@ -124,9 +125,10 @@ final readonly class SendOzonMessageChatDispatcher
 
         $lastMessageText = $lastMessage->getMessage();
         $externalChatId = $SupportInvariableDTO->getTicket();
+        $OzonTokenUid = new OzonTokenUid($OzonSupportToken);
 
         $result = $this->sendMessageRequest
-            ->forTokenIdentifier($UserProfileUid)
+            ->forTokenIdentifier($OzonTokenUid)
             ->chatId($externalChatId)
             ->message($lastMessageText)
             ->sendMessage();

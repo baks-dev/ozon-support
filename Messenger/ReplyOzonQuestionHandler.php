@@ -77,15 +77,16 @@ final readonly class ReplyOzonQuestionHandler
         }
 
 
-        $UserProfileUid = $CurrentSupportEvent->getInvariable()?->getProfile();
+        $OzonSupportToken = $CurrentSupportEvent->getToken()?->getValue();
 
-        if(false === ($UserProfileUid instanceof UserProfileUid))
+        if(empty($OzonSupportToken))
         {
             $this->logger->critical(
-                sprintf('ozon-support: Ошибка получения профиля по идентификатору : %s', $message->getId()));
+                sprintf('ozon-support: Ошибка получения токена сообщения : %s', $message->getId()),
+                [self::class.':'.__LINE__],
+            );
 
             return;
-
         }
 
 
@@ -119,6 +120,7 @@ final readonly class ReplyOzonQuestionHandler
 
         /**
          * Первое сообщение, содержащее идентификатор SKU
+         *
          * @var SupportMessageDTO $firstMessage
          */
 
@@ -133,6 +135,7 @@ final readonly class ReplyOzonQuestionHandler
 
         /**
          * Последнее сообщение для ответа
+         *
          * @var SupportMessageDTO $lastMessage
          */
 
@@ -149,11 +152,8 @@ final readonly class ReplyOzonQuestionHandler
          * Формируем ответ на вопрос
          */
 
+        $OzonTokenUid = new OzonTokenUid($OzonSupportToken);
         $ticket = $SupportInvariableDTO->getTicket();
-
-        $token = $SupportDTO->getToken()->getValue();
-        $OzonTokenUid = $token ? new OzonTokenUid($token) : $UserProfileUid;
-
 
         $result = $this->PostOzonQuestionAnswerRequest
             ->forTokenIdentifier($OzonTokenUid)
