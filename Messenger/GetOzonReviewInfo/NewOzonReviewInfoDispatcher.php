@@ -126,7 +126,7 @@ final readonly class NewOzonReviewInfoDispatcher
 
         /** SupportInvariable */
         $supportInvariableDTO = new SupportInvariableDTO()
-            ->setProfile($message->getProfile())
+            //->setProfile($message->getProfile())
             ->setType(new TypeProfileUid(OzonReviewProfileType::TYPE))
             ->setTicket($reviewInfo->getId())
             ->setTitle($reviewInfo->getTitle());

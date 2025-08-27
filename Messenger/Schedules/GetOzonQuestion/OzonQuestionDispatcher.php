@@ -175,7 +175,7 @@ final class OzonQuestionDispatcher
                 }
 
                 $supportInvariableDTO = new SupportInvariableDTO()
-                    ->setProfile($message->getProfile())
+                    //->setProfile($message->getProfile())
                     ->setType(new TypeProfileUid(OzonQuestionProfileType::class))
                     ->setTicket($question->getId())
                     ->setTitle($title);

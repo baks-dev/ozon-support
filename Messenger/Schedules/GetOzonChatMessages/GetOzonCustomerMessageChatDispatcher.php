@@ -83,7 +83,7 @@ final class GetOzonCustomerMessageChatDispatcher
 
         /** SupportInvariable */
         $supportInvariableDTO = new SupportInvariableDTO()
-            ->setProfile($message->getProfile())
+            //->setProfile($message->getProfile())
             ->setType(new TypeProfileUid(OzonSupportProfileType::TYPE))
             ->setTicket($message->getChatId());
 
