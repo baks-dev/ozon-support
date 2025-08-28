@@ -147,7 +147,7 @@ final class OzonQuestionDispatcher
                 /**
                  * @see SupportEvent
                  */
-                $SupportDTO = new SupportDTO() // done
+                $SupportDTO = (new SupportDTO()) // done
                 ->setPriority(new SupportPriority(SupportPriorityLow::class)) // CustomerMessage - высокий приоритет
                 ->setStatus(new SupportStatus(SupportStatusOpen::class)); // Для нового сообщения - StatusOpen
 

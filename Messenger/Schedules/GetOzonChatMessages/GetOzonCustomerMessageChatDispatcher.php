@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatMessages;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
+use BaksDev\Orders\Order\Repository\SearchProfileByNumber\SearchProfileByNumberInterface;
 use BaksDev\Ozon\Support\Api\Get\ChatMessages\GetOzonChatMessagesRequest;
 use BaksDev\Ozon\Support\Api\Get\ChatMessages\OzonMessageChatDTO;
 use BaksDev\Ozon\Support\Type\OzonSupportProfileType;
@@ -42,6 +43,7 @@ use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use DateInterval;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
@@ -62,6 +64,7 @@ final class GetOzonCustomerMessageChatDispatcher
         private readonly CurrentSupportEventByTicketInterface $supportByOzonChat,
         private readonly ExistSupportTicketInterface $existSupportTicket,
         private readonly SupportHandler $supportHandler,
+        private readonly SearchProfileByNumberInterface $SearchProfileByNumberRepository,
     )
     {
         $this->deduplicator
@@ -87,6 +90,7 @@ final class GetOzonCustomerMessageChatDispatcher
             ->setType(new TypeProfileUid(OzonSupportProfileType::TYPE))
             ->setTicket($message->getChatId());
 
+
         /** Сообщения чата */
 
         // получаем массив сообщений из чата
@@ -102,6 +106,7 @@ final class GetOzonCustomerMessageChatDispatcher
             return;
         }
 
+        /** @var array<int, OzonMessageChatDTO> $messagesChat */
         $messagesChat = iterator_to_array($messagesChat);
 
         // текущее событие чата по идентификатору чата (тикета) из Ozon
@@ -111,6 +116,47 @@ final class GetOzonCustomerMessageChatDispatcher
 
         /** Пересохраняю событие с новыми данными */
         false === ($support instanceof SupportEvent) ?: $support->getDto($SupportDTO);
+
+        /**
+         * Если сообщение не адресовано профилю - пробуем найти в тексте идентификаторы заказа
+         */
+
+        $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
+
+        if(false === ($UserProfileUid instanceof UserProfileUid))
+        {
+            foreach($messagesChat as $search)
+            {
+                // Для формата с дефисами: XXXXXXXXXX-XXXX-X
+                if(preg_match('/\b\d{8}-\d{4}-\d{1}\b/', $search->getData(), $matches))
+                {
+                    /** Пробуем определить профиль по идентификатору заказа */
+                    $foundValue = $matches[0];
+
+                    $UserProfileUid = $this->SearchProfileByNumberRepository->find($foundValue);
+
+                    if($UserProfileUid instanceof UserProfileUid)
+                    {
+                        $supportInvariableDTO->setProfile($UserProfileUid);
+                        break;
+                    }
+                }
+
+                if(preg_match('/\b\d{8}-\d{4}\b/', $search->getData(), $matches))
+                {
+                    /** Пробуем определить профиль по идентификатору заказа */
+                    $foundValue = $matches[0];
+
+                    $UserProfileUid = $this->SearchProfileByNumberRepository->find($foundValue);
+
+                    if($UserProfileUid instanceof UserProfileUid)
+                    {
+                        $supportInvariableDTO->setProfile($UserProfileUid);
+                        break;
+                    }
+                }
+            }
+        }
 
         /** Устанавливаем заголовок чата - выполнится только один раз при сохранении чата */
         if(false === $support)
@@ -181,36 +227,41 @@ final class GetOzonCustomerMessageChatDispatcher
             }
 
             // подготовка DTO для нового сообщения
-            $supportMessageDTO = new SupportMessageDTO();
-            $supportMessageDTO->setMessage($chatMessage->getData());
-            $supportMessageDTO->setDate($chatMessage->getCreated());
-            $supportMessageDTO->setExternal($chatMessage->getId()); // идентификатор сообщения в Озон
+            $supportMessageDTO = (new SupportMessageDTO())
+                ->setMessage($chatMessage->getData())
+                ->setDate($chatMessage->getCreated())
+                ->setExternal($chatMessage->getId()); // идентификатор сообщения в Озон
 
             // параметры в зависимости от типа юзера сообщения
             if($chatMessage->getUserType() === 'Seller')
             {
-                $supportMessageDTO->setName('admin (OZON Seller)');
-                $supportMessageDTO->setOutMessage();
+                $supportMessageDTO
+                    ->setName('admin (OZON Seller)')
+                    ->setOutMessage();
             }
 
             if($chatMessage->getUserType() === 'Customer')
             {
-                $supportMessageDTO->setName(sprintf('Пользователь (%s)', $chatMessage->getUserId()));
-                $supportMessageDTO->setInMessage();
+                $supportMessageDTO
+                    ->setName(sprintf('Пользователь (%s)', $chatMessage->getUserId()))
+                    ->setInMessage();
             }
 
             // Если не возможно определить тип - присваиваем идентификатор чата в качестве имени
             if($chatMessage->getUserType() !== 'Customer' && $chatMessage->getUserType() !== 'Seller')
             {
-                $supportMessageDTO->setName($chatMessage->getUserId());
-                $supportMessageDTO->setInMessage();
+                $supportMessageDTO
+                    ->setName($chatMessage->getUserId())
+                    ->setInMessage();
             }
 
             // при добавлении нового сообщения открываем чат заново
-            $SupportDTO->setStatus(new SupportStatus(SupportStatusOpen::class));
-            $SupportDTO->addMessage($supportMessageDTO);
+            $SupportDTO
+                ->setStatus(new SupportStatus(SupportStatusOpen::class))
+                ->addMessage($supportMessageDTO);
 
             $this->isAddMessage ?: $this->isAddMessage = true;
+
             $deduplicator->save();
         }
 
