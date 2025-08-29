@@ -117,32 +117,6 @@ final class GetOzonCustomerMessageChatDispatcher
         /** Пересохраняю событие с новыми данными */
         false === ($support instanceof SupportEvent) ?: $support->getDto($SupportDTO);
 
-        /**
-         * Если сообщение не адресовано профилю - пробуем найти в тексте идентификаторы заказа
-         */
-
-        $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
-
-        if(false === ($UserProfileUid instanceof UserProfileUid))
-        {
-            foreach($messagesChat as $search)
-            {
-                // Для формата с дефисами: XXXXXXXXXX-XXXX-X
-                if(preg_match('/\b\d{8,}-\d{4,}(?:-\d+)?\b/', $search->getData(), $matches))
-                {
-                    /** Пробуем определить профиль по идентификатору заказа */
-                    $foundValue = $matches[0];
-
-                    $UserProfileUid = $this->SearchProfileByNumberRepository->find($foundValue);
-
-                    if($UserProfileUid instanceof UserProfileUid)
-                    {
-                        $supportInvariableDTO->setProfile($UserProfileUid);
-                        break;
-                    }
-                }
-            }
-        }
 
         /** Устанавливаем заголовок чата - выполнится только один раз при сохранении чата */
         if(false === $support)
@@ -177,12 +151,41 @@ final class GetOzonCustomerMessageChatDispatcher
             // определяем возврат - подставляем в заголовок
             $refund = $firstMessage->getRefundTitle();
 
-            if(null !== $refund)
+            if(false === empty($refund))
             {
                 $title = 'Возврат № '.$refund;
             }
 
             $supportInvariableDTO->setTitle($title);
+        }
+
+        /**
+         * Если сообщение не адресовано профилю - пробуем найти в тексте идентификаторы заказа
+         */
+
+        $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
+
+        if(false === ($UserProfileUid instanceof UserProfileUid))
+        {
+            foreach($messagesChat as $search)
+            {
+                // Для формата с дефисами: ....XXXXXXXX-XXXX....
+                if(preg_match('/\b\d{8,}-\d{4,}(?:-\d+)?\b/', $search->getData(), $matches))
+                {
+                    /** Пробуем определить профиль по идентификатору заказа */
+                    $foundValue = $matches[0];
+
+                    $UserProfileUid = $this->SearchProfileByNumberRepository->find($foundValue);
+
+                    if($UserProfileUid instanceof UserProfileUid)
+                    {
+                        $supportInvariableDTO->setProfile($UserProfileUid);
+                        $supportInvariableDTO->setTitle(sprintf('Заказ #%s', $foundValue));
+
+                        break;
+                    }
+                }
+            }
         }
 
         $SupportDTO->setInvariable($supportInvariableDTO);

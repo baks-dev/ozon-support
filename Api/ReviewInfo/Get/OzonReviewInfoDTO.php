@@ -111,7 +111,7 @@ final readonly class OzonReviewInfoDTO
     public function getMessage(): string
     {
         // ссылка на отзыв
-        $message = sprintf('<p><a href="https://www.ozon.ru/product/%s" class="ms-3">Ссылка на товар</a></p>', $this->sku);
+        $message = sprintf('<p><a href="https://www.ozon.ru/product/%s" class="ms-3" target="_blank">Ссылка на товар</a></p>', $this->sku);
 
         // текст сообщения
         $message .= empty($this->text) ? '<strong><i>Текст отзыва отсутствует</i></strong>' : $this->text;
