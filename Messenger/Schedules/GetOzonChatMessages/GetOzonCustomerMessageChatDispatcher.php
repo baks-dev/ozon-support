@@ -128,21 +128,7 @@ final class GetOzonCustomerMessageChatDispatcher
             foreach($messagesChat as $search)
             {
                 // Для формата с дефисами: XXXXXXXXXX-XXXX-X
-                if(preg_match('/\b\d{8}-\d{4}-\d{1}\b/', $search->getData(), $matches))
-                {
-                    /** Пробуем определить профиль по идентификатору заказа */
-                    $foundValue = $matches[0];
-
-                    $UserProfileUid = $this->SearchProfileByNumberRepository->find($foundValue);
-
-                    if($UserProfileUid instanceof UserProfileUid)
-                    {
-                        $supportInvariableDTO->setProfile($UserProfileUid);
-                        break;
-                    }
-                }
-
-                if(preg_match('/\b\d{8}-\d{4}\b/', $search->getData(), $matches))
+                if(preg_match('/\b\d{8,}-\d{4,}(?:-\d+)?\b/', $search->getData(), $matches))
                 {
                     /** Пробуем определить профиль по идентификатору заказа */
                     $foundValue = $matches[0];
