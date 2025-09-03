@@ -43,6 +43,7 @@ use BaksDev\Support\UseCase\Admin\New\Invariable\SupportInvariableDTO;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportHandler;
+use BaksDev\Support\UseCase\Admin\New\Token\SupportTokenDTO;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
 use DateInterval;
 use Psr\Log\LoggerInterface;
@@ -120,9 +121,10 @@ final readonly class NewOzonReviewInfoDispatcher
         ->setStatus(new SupportStatus(SupportStatusOpen::class)); // Для нового отзыва - StatusOpen
 
         /** Присваиваем токен для последующего поиска */
-        $SupportDTO
-            ->getToken()
+        $SupportTokenDTO = new SupportTokenDTO()
             ->setValue($message->getIdentifier());
+        $SupportDTO->setToken($SupportTokenDTO);
+
 
         /** SupportInvariable */
         $supportInvariableDTO = new SupportInvariableDTO()
