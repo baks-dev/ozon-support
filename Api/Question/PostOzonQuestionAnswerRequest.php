@@ -108,31 +108,33 @@ final class PostOzonQuestionAnswerRequest extends Ozon
             ->request(
                 'POST',
                 '/v1/question/answer/create',
-                ["json" => $json]
+                ["json" => $json],
             );
 
         if($response->getStatusCode() !== 200)
         {
             $result = $response->toArray(false);
 
-            if(str_contains($result['message'], 'checkSellerPremiumPlus'))
-            {
-                $this->logger->critical('ozon-support: Ошибка при ответе на вопрос',
-                    [
-                        self::class.':'.__LINE__,
-                        $result,
-                        $json,
-                    ]);
-
-                return true;
-            }
-
             $this->logger->critical('ozon-support: Ошибка при ответе на вопрос',
                 [
                     self::class.':'.__LINE__,
                     $result,
-                    $json
+                    $json,
                 ]);
+
+            /** Необходима Премиум-подписка */
+            if(str_contains($result['message'], 'checkSellerPremiumPlus'))
+            {
+                return true;
+            }
+
+            /**  */
+            if(str_contains($result['message'], 'invalid argument'))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         return $response->getStatusCode() === 200;
