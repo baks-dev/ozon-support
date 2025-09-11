@@ -175,6 +175,9 @@ final class GetOzonCustomerMessageChatDispatcher
                     /** Пробуем определить профиль по идентификатору заказа */
                     $foundValue = $matches[0];
 
+                    // Удаляем конечные символы от 1 до 9
+                    $foundValue = preg_replace('/-[1-9](\d)?$/', '', $foundValue);
+
                     $UserProfileUid = $this->SearchProfileByNumberRepository->find($foundValue);
 
                     if($UserProfileUid instanceof UserProfileUid)
