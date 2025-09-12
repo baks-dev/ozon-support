@@ -59,18 +59,17 @@ class GetOzonChatMessagesRequestTest extends KernelTestCase
     public function testRequest(): void
     {
         self::assertTrue(true);
-        return;
 
         /** @var GetOzonChatMessagesRequest $ozonChatHistoryRequest */
         $ozonChatHistoryRequest = self::getContainer()->get(GetOzonChatMessagesRequest::class);
         $ozonChatHistoryRequest->TokenHttpClient(self::$Authorization);
 
         $messages = $ozonChatHistoryRequest
-            ->chatId('id')
-            ->limit(1000)
+            ->chatId('9eaea40e-2faf-4d5f-ad28-ac405df7696a')
+            ->limit(100)
             ->findAll();
 
-        // dd(iterator_to_array($messages));
+        dd(iterator_to_array($messages));
 
         self::assertNotFalse($messages);
 

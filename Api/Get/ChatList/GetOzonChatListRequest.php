@@ -58,7 +58,7 @@ final class GetOzonChatListRequest extends Ozon
      * Значение по умолчанию — 30
      * Максимальное значение — 1000.
      */
-    private int $limit = 30;
+    private int $limit = 100;
 
     /**
      * Количество элементов, которое будет пропущено в ответе.
@@ -110,7 +110,8 @@ final class GetOzonChatListRequest extends Ozon
 
     /**
      * Список чатов
-     * @see https://docs.ozon.ru/api/seller/#operation/ChatAPI_ChatListV2
+     *
+     * @see https://docs.ozon.ru/api/seller/#operation/ChatAPI_ChatListV3
      *
      * @return Generator<int, OzonChatDTO>|false
      */
@@ -124,17 +125,17 @@ final class GetOzonChatListRequest extends Ozon
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',
-                'v2/chat/list',
+                '/v3/chat/list',
                 [
                     "json" => [
                         'filter' => [
                             "chat_status" => $this->status,
-                            "unread_only" => $this->unreadOnly
+                            "unread_only" => $this->unreadOnly,
                         ],
                         "limit" => $this->limit,
-                        "offset" => $this->offset
-                    ]
-                ]
+                        "offset" => $this->offset,
+                    ],
+                ],
             );
 
         $content = $response->toArray(false);
@@ -145,7 +146,7 @@ final class GetOzonChatListRequest extends Ozon
                 sprintf('ozon-support: Ошибка получения списка чатов от Ozon Seller API'),
                 [
                     self::class.':'.__LINE__,
-                    $content
+                    $content,
                 ]);
 
             return false;

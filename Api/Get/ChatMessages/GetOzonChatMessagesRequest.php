@@ -109,7 +109,7 @@ final class GetOzonChatMessagesRequest extends Ozon
     }
 
     /**
-     * Список сообщений чата
+     * Список сообщений чата (Доступно для продавцов с подпиской Premium Plus)
      *
      * @see https://docs.ozon.ru/api/seller/?__rr=1#operation/ChatAPI_ChatHistoryV3
      *

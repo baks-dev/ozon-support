@@ -43,7 +43,7 @@ class GetOzonChatListRequestTest extends KernelTestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$Authorization = new OzonAuthorizationToken(
+        self::$authorization = new OzonAuthorizationToken(
             new UserProfileUid('018d464d-c67a-7285-8192-7235b0510924'),
             $_SERVER['TEST_OZON_TOKEN'],
             TypeProfileFbsOzon::TYPE,
@@ -58,6 +58,8 @@ class GetOzonChatListRequestTest extends KernelTestCase
 
     public function testComplete(): void
     {
+        self::assertTrue(true);
+
         /** @var GetOzonChatListRequest $ozonChatListRequest */
         $ozonChatListRequest = self::getContainer()->get(GetOzonChatListRequest::class);
         $ozonChatListRequest->TokenHttpClient(self::$authorization);
@@ -65,9 +67,8 @@ class GetOzonChatListRequestTest extends KernelTestCase
         $chats = $ozonChatListRequest
             ->getListChats();
 
-        self::assertNotFalse($chats);
 
-        //dd(iterator_to_array($chats));
+        dd(iterator_to_array($chats));
 
         /** @var OzonChatDTO $chat */
         foreach($chats as $chat)

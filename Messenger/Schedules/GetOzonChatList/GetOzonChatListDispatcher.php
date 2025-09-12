@@ -28,7 +28,6 @@ namespace BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\Get\ChatList\GetOzonChatListRequest;
-use BaksDev\Ozon\Support\Api\Get\ChatList\OzonChatDTO;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatMessages\GetOzonCustomerMessageChatMessage;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -76,35 +75,25 @@ final readonly class GetOzonChatListDispatcher
              */
             $listChats = $this->ozonChatListRequest
                 ->forTokenIdentifier($OzonTokenUid)
-                ->opened()
-                ->unreadMessageOnly()
+                ->unreadMessageOnly() // Только чаты с непрочитанными сообщениями
+                ->opened() // только открытые чаты
                 ->getListChats();
 
+
             // в случае ошибки при запросе
-            if(false === $listChats)
+            if(false === $listChats || false === $listChats->valid())
             {
-                return;
+                continue;
             }
 
-            // если список чатов пустой
-            if(false === $listChats->valid())
+            foreach($listChats as $customerChat)
             {
-                return;
-            }
+                // только чаты с покупателями
+                if($customerChat->getType() !== 'BUYER_SELLER')
+                {
+                    continue;
+                }
 
-            // только чаты с покупателями
-            $customerChats = array_filter(iterator_to_array($listChats), static function(OzonChatDTO $chat) {
-                return $chat->getType() === 'Buyer_Seller';
-            });
-
-            if(empty($customerChats))
-            {
-                return;
-            }
-
-            /** @var OzonChatDTO $customerChat */
-            foreach($customerChats as $customerChat)
-            {
                 $GetOzonCustomerMessageChatMessage = new GetOzonCustomerMessageChatMessage(
                     chatId: $customerChat->getId(),
                     profile: $profile,
