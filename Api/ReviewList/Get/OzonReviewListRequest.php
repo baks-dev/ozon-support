@@ -125,7 +125,8 @@ final class OzonReviewListRequest extends Ozon
 
                 if($response->getStatusCode() !== 200)
                 {
-                    if(str_contains($result['message'], 'Premium Plus'))
+                    /** Только премиуим-подписка */
+                    if(str_contains(mb_strtolower($result['message']), 'premium'))
                     {
                         return true;
                     }
