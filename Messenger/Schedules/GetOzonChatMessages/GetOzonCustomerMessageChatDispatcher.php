@@ -165,6 +165,32 @@ final class GetOzonCustomerMessageChatDispatcher
 
         $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
 
+        /** Пробуем найти по заголовку */
+        if(false === ($UserProfileUid instanceof UserProfileUid))
+        {
+            // Для формата с дефисами: ....XXXXXXXX-XXXX....
+            if(preg_match('/\b\d{8,}-\d{4,}(?:-\d+)?\b/', $title, $matches))
+            {
+                /** Пробуем определить профиль по идентификатору заказа */
+                $foundValue = $matches[0];
+
+                // Удаляем конечные символы от 1 до 9
+                $foundValue = preg_replace('/-[1-9](\d)?$/', '', $foundValue);
+
+                $UserProfileUid = $this->SearchProfileByNumberRepository->find($foundValue);
+
+                if($UserProfileUid instanceof UserProfileUid)
+                {
+                    $supportInvariableDTO->setProfile($UserProfileUid);
+                    $supportInvariableDTO->setTitle(sprintf('Заказ #%s', $foundValue));
+                }
+            }
+        }
+
+
+        $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
+
+        /** Пробуем найти по тексту */
         if(false === ($UserProfileUid instanceof UserProfileUid))
         {
             foreach($messagesChat as $search)
