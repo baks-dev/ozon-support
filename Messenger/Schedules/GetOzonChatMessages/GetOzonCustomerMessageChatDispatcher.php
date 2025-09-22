@@ -166,7 +166,7 @@ final class GetOzonCustomerMessageChatDispatcher
         $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
 
         /** Пробуем найти по заголовку */
-        if(false === ($UserProfileUid instanceof UserProfileUid))
+        if(false === ($UserProfileUid instanceof UserProfileUid) && false === empty($title))
         {
             // Для формата с дефисами: ....XXXXXXXX-XXXX....
             if(preg_match('/\b\d{8,}-\d{4,}(?:-\d+)?\b/', $title, $matches))
