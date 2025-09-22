@@ -106,6 +106,16 @@ final class SendOzonMessageChatRequest extends Ozon
                 return true;
             }
 
+            if(str_contains(haystack: $error['message'], needle: 'not permitted'))
+            {
+                $this->logger->critical(
+                    'ozon-support: Период доступа к чату истек',
+                    [self::class.':'.__LINE__, $error, $json],
+                );
+
+                return true;
+            }
+
             $this->logger->critical(
                 'ozon-support: Ошибка отправки сообщения в существующий чат по его идентификатору',
                 [self::class.':'.__LINE__, $error, $json],
