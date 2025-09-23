@@ -68,7 +68,7 @@ class GetOzonChatListRequestTest extends KernelTestCase
             ->getListChats();
 
 
-        dd(iterator_to_array($chats));
+        //dd(iterator_to_array($chats));
 
         /** @var OzonChatDTO $chat */
         foreach($chats as $chat)
