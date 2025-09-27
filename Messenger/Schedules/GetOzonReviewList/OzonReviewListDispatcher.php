@@ -57,8 +57,9 @@ final readonly class OzonReviewListDispatcher
         /** Получаем все токены профиля */
 
         $tokensByProfile = $this->OzonTokensByProfile
+            ->forProfile($message->getProfile())
             ->onlyCardUpdate()
-            ->findAll($message->getProfile());
+            ->findAll();
 
         if(false === $tokensByProfile || false === $tokensByProfile->valid())
         {
