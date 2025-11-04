@@ -67,6 +67,11 @@ final readonly class FindProfileForCreateOzonSupportHandler
             return;
         }
 
+        $this->logger->info(
+            'Получаем по расписанию новые сообщения из чатов Ozon',
+            [self::class.':'.__LINE__],
+        );
+
         /** @var UserProfileUid $profile */
         foreach($profiles as $profile)
         {

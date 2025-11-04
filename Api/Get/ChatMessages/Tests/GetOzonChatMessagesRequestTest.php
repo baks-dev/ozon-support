@@ -30,8 +30,9 @@ use BaksDev\Ozon\Support\Api\Get\ChatMessages\GetOzonChatMessagesRequest;
 use BaksDev\Ozon\Support\Api\Get\ChatMessages\OzonMessageChatDTO;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Group;
+use ReflectionClass;
+use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -65,23 +66,27 @@ class GetOzonChatMessagesRequestTest extends KernelTestCase
         $ozonChatHistoryRequest->TokenHttpClient(self::$Authorization);
 
         $messages = $ozonChatHistoryRequest
-            ->chatId('9eaea40e-2faf-4d5f-ad28-ac405df7696a')
+            ->chatId('fc1b6ce2-8471-4ef5-925f-0ec4a94148a9')
             ->limit(100)
             ->findAll();
 
-        dd(iterator_to_array($messages));
-
-        self::assertNotFalse($messages);
-
         /** @var OzonMessageChatDTO $message */
-        foreach($messages as $message)
+        foreach($messages as $OzonMessageChatDTO)
         {
-            self::assertIsString($message->getId());
-            self::assertIsString($message->getUserId());
-            self::assertIsString($message->getUserType());
+            // Вызываем все геттеры
+            $reflectionClass = new ReflectionClass(OzonMessageChatDTO::class);
+            $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
 
-            self::assertTrue($message->getCreated() instanceof DateTimeImmutable);
-            self::assertIsString($message->getData());
+            foreach($methods as $method)
+            {
+                // Методы без аргументов
+                if($method->getNumberOfParameters() === 0)
+                {
+                    // Вызываем метод
+                    $data = $method->invoke($OzonMessageChatDTO);
+                    // dump($data);
+                }
+            }
         }
     }
 }

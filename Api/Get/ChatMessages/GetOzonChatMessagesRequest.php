@@ -159,7 +159,7 @@ final class GetOzonChatMessagesRequest extends Ozon
 
         foreach($content['messages'] as $message)
         {
-            yield new OzonMessageChatDTO($message);
+            yield new OzonMessageChatDTO($message, $this->chat, $this->getClient());
         }
     }
 }

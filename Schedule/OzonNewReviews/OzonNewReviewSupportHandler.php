@@ -55,7 +55,7 @@ final readonly class OzonNewReviewSupportHandler
             ->onlyActiveToken()
             ->findAll();
 
-        if(false === $profiles->valid())
+        if(false === $profiles || false === $profiles->valid())
         {
             $this->logger->warning(
                 'Профили с активными токенами Ozon не найдены',
@@ -64,6 +64,11 @@ final readonly class OzonNewReviewSupportHandler
 
             return;
         }
+
+        $this->logger->info(
+            'Получаем по расписанию новые отзывы Ozon',
+            [self::class.':'.__LINE__],
+        );
 
         /** @var UserProfileUid $profile */
         foreach($profiles as $profile)

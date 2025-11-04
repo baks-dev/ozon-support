@@ -56,7 +56,7 @@ final readonly class OzonNewQuestionSupportHandler
             ->onlyActiveToken()
             ->findAll();
 
-        if(false === $profiles->valid())
+        if(false === $profiles || false === $profiles->valid())
         {
             $this->logger->warning(
                 'Профили с активными токенами Ozon не найдены',
@@ -65,6 +65,11 @@ final readonly class OzonNewQuestionSupportHandler
 
             return;
         }
+
+        $this->logger->info(
+            'Получаем по расписанию новые вопросы к товарам Ozon',
+            [self::class.':'.__LINE__],
+        );
 
         /** @var UserProfileUid $profile */
         foreach($profiles as $profile)

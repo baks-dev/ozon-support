@@ -35,6 +35,12 @@ final readonly class OzonMessageChatDTO
     /** Идентификатор сообщения. */
     private string $id;
 
+    /** Идентификатор чата */
+    private string $chat;
+
+    /** Идентификатор клиента токена склада */
+    private string $seller;
+
     /** Идентификатор участника чата. */
     private string $userId;
 
@@ -53,13 +59,16 @@ final readonly class OzonMessageChatDTO
     /** ВНУТРЕННИЙ ПАРАМЕТР. Заголовок сообщений о возврате. */
     private ?string $refundTitle;
 
+
     /**
      * @throws DateInvalidTimeZoneException
      * @throws DateMalformedStringException
      */
-    public function __construct(array $data)
+    public function __construct(array $data, string $chat, string $seller)
     {
         $this->id = (string) $data['message_id'];
+        $this->chat = $chat;
+        $this->seller = $seller;
         $this->userId = $data['user']['id'];
         $this->userType = $data['user']['type'];
         $this->read = $data['is_read'];
@@ -125,6 +134,8 @@ final readonly class OzonMessageChatDTO
     /** Массив с содержимым сообщения в формате Markdown. */
     public function getData(): string
     {
+
+
         $imageLink = false;
 
         // 1 - начало для ссылок на изображения от api ozon.
@@ -139,30 +150,32 @@ final readonly class OzonMessageChatDTO
         // Формат для ссылок api - ![](ссылка)
         if(str_starts_with($this->data, '!'))
         {
-            preg_match('~\(\K.+?(?=\))~', $this->data, $apiLinkMatches);
-            empty($apiLinkMatches) ?: $imageLink = $apiLinkMatches[0];
+            // Извлекаем URL из markdown
+            preg_match('/!\[\]\((.*?)\)/', $this->data, $apiLinkMatches);
+            empty($apiLinkMatches) ?: $imageLink = $apiLinkMatches[1];
+
         }
 
 
         if($imageLink)
         {
-            $pathInfo = pathinfo($imageLink);
+            // Получаем имя файла из URL
+            $filename = basename($imageLink);
+
+            // Разделяем имя и расширение
+            $pathInfo = pathinfo($filename);
+            $name = $pathInfo['filename']; // fc1b6ce2-8471-4ef5-925f-0ec4a94148a9
+            $extension = $pathInfo['extension']; // jpeg
 
 
-            //            $this->ticket, // идентификатор чата (тикета)
-            //            $this->message, // идентификатор сообщения // message_id
-            //            $this->file // файл
+            $imageLink = 'https://seller.ozon.ru/api/chat/v2/file/download/'.$this->seller.'/'.$this->chat.'/'.$this->id.'/'.$name.'.'.$extension;
 
-            /**
-             * @see FileController
-             */
-            $url = '/admin/ozon-support/files/'.$pathInfo['basename'].'/info';
 
             // миниатюра картинки
-            $miniature = sprintf('<img src="%s" width="200" height="auto">', $url);
+            $miniature = sprintf('<img src="%s" width="200" height="auto">', $imageLink);
 
             // ссылка на полноразмерное изображение
-            $link = sprintf('<a href="%s" class="ms-3" target="_blank">Открыть полное фото</a>', $url);
+            $link = sprintf('<a href="%s" class="ms-3" target="_blank">Открыть полное фото</a>', $imageLink);
 
             return $miniature.' '.$link;
         }

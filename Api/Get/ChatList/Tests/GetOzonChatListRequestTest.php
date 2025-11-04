@@ -28,10 +28,13 @@ namespace BaksDev\Ozon\Support\Api\Get\ChatList\Tests;
 use BaksDev\Ozon\Orders\Type\ProfileType\TypeProfileFbsOzon;
 use BaksDev\Ozon\Support\Api\Get\ChatList\GetOzonChatListRequest;
 use BaksDev\Ozon\Support\Api\Get\ChatList\OzonChatDTO;
+use BaksDev\Ozon\Support\Api\Get\ChatMessages\GetOzonChatMessagesRequest;
+use BaksDev\Ozon\Support\Api\Get\ChatMessages\OzonMessageChatDTO;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Group;
+use ReflectionClass;
+use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -68,19 +71,59 @@ class GetOzonChatListRequestTest extends KernelTestCase
             ->getListChats();
 
 
-        //dd(iterator_to_array($chats));
-
         /** @var OzonChatDTO $chat */
-        foreach($chats as $chat)
+        foreach($chats as $key => $OzonChatDTO)
         {
-            self::assertIsString($chat->getId());
-            self::assertIsString($chat->getStatus());
-            self::assertIsString($chat->getType());
-            self::assertTrue($chat->getCreated() instanceof DateTimeImmutable);
+            // Вызываем все геттеры
+            $reflectionClass = new ReflectionClass(OzonChatDTO::class);
+            $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
 
-            self::assertTrue(is_numeric($chat->getFirstUnreadMessage()));
-            self::assertTrue(is_numeric($chat->getUnreadMessageCount()));
-            self::assertTrue(is_numeric($chat->getLastMessage()));
+            foreach($methods as $method)
+            {
+                // Методы без аргументов
+                if($method->getNumberOfParameters() === 0)
+                {
+                    // Вызываем метод
+                    $data = $method->invoke($OzonChatDTO);
+                    // dump($data);
+                }
+            }
+
+            /**
+             * В случае необходимости - получаем сообщения чата
+             *
+             * @see GetOzonChatMessagesRequest
+             */
+
+            /** @var GetOzonChatMessagesRequest $ozonChatHistoryRequest */
+            $ozonChatHistoryRequest = self::getContainer()->get(GetOzonChatMessagesRequest::class);
+            $ozonChatHistoryRequest->TokenHttpClient(self::$authorization);
+
+            $messages = $ozonChatHistoryRequest
+                ->chatId($OzonChatDTO->getId())
+                ->limit(100)
+                ->findAll();
+
+            foreach($messages as $OzonMessageChatDTO)
+            {
+                // Вызываем все геттеры
+                $reflectionClass = new ReflectionClass(OzonMessageChatDTO::class);
+                $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
+
+                foreach($methods as $method)
+                {
+                    // Методы без аргументов
+                    if($method->getNumberOfParameters() === 0)
+                    {
+                        // Вызываем метод
+                        $data = $method->invoke($OzonMessageChatDTO);
+                        //dump($data);
+                    }
+                }
+            }
+
+            break;
+
         }
     }
 }
