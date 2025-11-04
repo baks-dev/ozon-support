@@ -190,7 +190,7 @@ final class GetOzonCustomerMessageChatDispatcher
 
         $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
 
-        /** Пробуем найти по тексту */
+        /** Пробуем найти идентификатор заказа по тексту */
         if(false === ($UserProfileUid instanceof UserProfileUid))
         {
             foreach($messagesChat as $search)
