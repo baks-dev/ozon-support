@@ -89,6 +89,8 @@ class GetOzonChatListRequestTest extends KernelTestCase
                 }
             }
 
+            // break;
+
             /**
              * В случае необходимости - получаем сообщения чата
              *
