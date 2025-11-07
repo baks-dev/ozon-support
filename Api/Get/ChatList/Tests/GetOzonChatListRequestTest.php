@@ -124,7 +124,7 @@ class GetOzonChatListRequestTest extends KernelTestCase
                 }
             }
 
-            break;
+            //break;
 
         }
     }
