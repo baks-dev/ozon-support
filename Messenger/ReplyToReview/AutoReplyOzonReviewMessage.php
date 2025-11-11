@@ -27,7 +27,7 @@ namespace BaksDev\Ozon\Support\Messenger\ReplyToReview;
 
 use BaksDev\Support\Type\Id\SupportUid;
 
-/** @see AutoReplyOzonReviewDispatcher */
+/** @see AutoReplyYandexReviewDispatcher */
 final  class AutoReplyOzonReviewMessage
 {
     private string $id;

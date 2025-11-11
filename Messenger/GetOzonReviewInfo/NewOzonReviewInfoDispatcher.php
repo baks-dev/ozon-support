@@ -52,7 +52,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
  * preview @see OzonReviewListDispatcher
- * next @see AutoReplyOzonReviewDispatcher
+ * next @see AutoReplyYandexReviewDispatcher
  */
 #[AsMessageHandler]
 final readonly class NewOzonReviewInfoDispatcher

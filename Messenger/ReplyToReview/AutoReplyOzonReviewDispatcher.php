@@ -125,7 +125,7 @@ final readonly class AutoReplyOzonReviewDispatcher
         /** Отправляем сообщение клиенту */
 
         $supportMessageDTO = new SupportMessageDTO()
-            ->setName('admin (OZON Seller)')
+            ->setName('auto (Bot Seller)')
             ->setMessage($answerMessage)
             ->setDate(new DateTimeImmutable('now'))
             ->setOutMessage();
