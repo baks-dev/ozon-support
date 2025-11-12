@@ -135,7 +135,7 @@ final readonly class OzonMessageChatDTO
     public function getData(): string
     {
 
-        /** Обрабатываем файл с видео */
+        /** Обрабатываем файл с ВИДЕО */
         if(str_starts_with($this->data, '[VID'))
         {
             if(preg_match('/\((https?:\/\/[^)]+)\)/', $this->data, $urlMatches))
@@ -167,7 +167,7 @@ final readonly class OzonMessageChatDTO
         }
 
 
-        // Формат для ссылок api - ![](ссылка)
+        /** Обрабатываем файл с ФОТО */
         if(str_starts_with($this->data, '![]'))
         {
             if(preg_match('/\((https?:\/\/[^)]+)\)/', $this->data, $urlMatches))
@@ -203,6 +203,9 @@ final readonly class OzonMessageChatDTO
         //preg_match('~\(\K.+?(?=\))~', $this->data, $linkMatches);
         preg_match('/\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/', $this->data, $linkMatches);
 
+
+        if(isset($linkMatches[1]))
+
         if(false === empty($linkMatches))
         {
             return sprintf('<a href="%s" target="_blank">Ссылка<a/>', $linkMatches[0]);
@@ -218,3 +221,5 @@ final readonly class OzonMessageChatDTO
         return $this->refundTitle;
     }
 }
+
+
