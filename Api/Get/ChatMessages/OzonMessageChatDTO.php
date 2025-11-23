@@ -167,8 +167,8 @@ final readonly class OzonMessageChatDTO
         }
 
 
-        /** Обрабатываем файл с ФОТО */
-        if(str_starts_with($this->data, '![]'))
+        /** Обрабатываем файл с ФОТО или Screenshot */
+        if(str_starts_with($this->data, '![]') || str_starts_with($this->data, '[Screenshot'))
         {
             if(preg_match('/\((https?:\/\/[^)]+)\)/', $this->data, $urlMatches))
             {
