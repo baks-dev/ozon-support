@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -42,11 +42,11 @@ use Symfony\Component\DependencyInjection\Attribute\When;
 #[When(env: 'test')]
 class GetOzonChatListRequestTest extends KernelTestCase
 {
-    private static OzonAuthorizationToken $authorization;
+    private static OzonAuthorizationToken $Authorization;
 
     public static function setUpBeforeClass(): void
     {
-        self::$authorization = new OzonAuthorizationToken(
+        self::$Authorization = new OzonAuthorizationToken(
             new UserProfileUid('018d464d-c67a-7285-8192-7235b0510924'),
             $_SERVER['TEST_OZON_TOKEN'],
             TypeProfileFbsOzon::TYPE,
@@ -65,7 +65,7 @@ class GetOzonChatListRequestTest extends KernelTestCase
 
         /** @var GetOzonChatListRequest $ozonChatListRequest */
         $ozonChatListRequest = self::getContainer()->get(GetOzonChatListRequest::class);
-        $ozonChatListRequest->TokenHttpClient(self::$authorization);
+        $ozonChatListRequest->TokenHttpClient(self::$Authorization);
 
         $chats = $ozonChatListRequest
             ->getListChats();
@@ -99,7 +99,7 @@ class GetOzonChatListRequestTest extends KernelTestCase
 
             /** @var GetOzonChatMessagesRequest $ozonChatHistoryRequest */
             $ozonChatHistoryRequest = self::getContainer()->get(GetOzonChatMessagesRequest::class);
-            $ozonChatHistoryRequest->TokenHttpClient(self::$authorization);
+            $ozonChatHistoryRequest->TokenHttpClient(self::$Authorization);
 
             $messages = $ozonChatHistoryRequest
                 ->chatId($OzonChatDTO->getId())

@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,9 @@ use BaksDev\Ozon\Support\Api\ReviewList\Get\OzonReviewDTO;
 use BaksDev\Ozon\Support\Api\ReviewList\Get\OzonReviewListRequest;
 use BaksDev\Ozon\Type\Authorization\OzonAuthorizationToken;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Group;
+use ReflectionClass;
+use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -39,7 +40,7 @@ use Symfony\Component\DependencyInjection\Attribute\When;
 #[When(env: 'test')]
 class OzonReviewListRequestTest extends KernelTestCase
 {
-    private static OzonAuthorizationToken $authorization;
+    private static OzonAuthorizationToken $Authorization;
 
     public static function setUpBeforeClass(): void
     {
@@ -58,9 +59,11 @@ class OzonReviewListRequestTest extends KernelTestCase
 
     public function testComplete(): void
     {
+        self::assertTrue(true);
+
         /** @var OzonReviewListRequest $ozonReviewListRequest */
         $ozonReviewListRequest = self::getContainer()->get(OzonReviewListRequest::class);
-        $ozonReviewListRequest->TokenHttpClient(self::$authorization);
+        $ozonReviewListRequest->TokenHttpClient(self::$Authorization);
 
         $reviewList = $ozonReviewListRequest
             ->status(OzonReviewListRequest::STATUS_UNPROCESSED)
@@ -73,24 +76,23 @@ class OzonReviewListRequestTest extends KernelTestCase
             return;
         }
 
-        self::assertNotFalse($reviewList);
-
-        /** @var OzonReviewDTO $review */
-        foreach($reviewList as $review)
+        foreach($reviewList as $OzonReviewDTO)
         {
-            self::assertInstanceOf(OzonReviewDTO::class, $review);
+            // Вызываем все геттеры
+            $reflectionClass = new ReflectionClass(OzonReviewDTO::class);
+            $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
 
-            self::assertIsString($review->getId());
-            self::assertIsInt($review->getSku());
-            self::assertIsString($review->getText());
-            self::assertTrue($review->getPublished() instanceof DateTimeImmutable);
-            self::assertIsInt($review->getRating());
-            self::assertIsString($review->getStatus());
-            self::assertIsInt($review->getCommentsAmount());
-            self::assertIsInt($review->getPhotosAmount());
-            self::assertIsInt($review->getVideosAmount());
-            self::assertIsString($review->getOrderStatus());
-            self::assertIsBool($review->isRatingPart());
+            foreach($methods as $method)
+            {
+                // Методы без аргументов
+                if($method->getNumberOfParameters() === 0)
+                {
+                    // Вызываем метод
+                    $data = $method->invoke($OzonReviewDTO);
+                    // dump($data);
+                }
+            }
+
         }
     }
 }

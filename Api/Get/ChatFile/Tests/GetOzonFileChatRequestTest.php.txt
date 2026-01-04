@@ -37,7 +37,7 @@ use Symfony\Component\DependencyInjection\Attribute\When;
 #[When(env: 'test')]
 class GetOzonFileChatRequestTest extends KernelTestCase
 {
-    private static OzonAuthorizationToken $authorization;
+    private static OzonAuthorizationToken $Authorization;
 
     public static function setUpBeforeClass(): void
     {
@@ -56,13 +56,9 @@ class GetOzonFileChatRequestTest extends KernelTestCase
 
     public function testComplete(): void
     {
-        self::assertTrue(true);
-        return;
-
-
         /** @var GetOzonFileChatRequest $ozonChatListRequest */
         $ozonChatListRequest = self::getContainer()->get(GetOzonFileChatRequest::class);
-        $ozonChatListRequest->TokenHttpClient(self::$authorization);
+        $ozonChatListRequest->TokenHttpClient(self::$Authorization);
 
         $chats = $ozonChatListRequest
             ->get('file');
