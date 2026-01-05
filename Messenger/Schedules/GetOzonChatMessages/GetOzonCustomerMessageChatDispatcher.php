@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -245,7 +245,7 @@ final class GetOzonCustomerMessageChatDispatcher
             }
 
             // подготовка DTO для нового сообщения
-            $supportMessageDTO = (new SupportMessageDTO())
+            $supportMessageDTO = new SupportMessageDTO()
                 ->setMessage($chatMessage->getData())
                 ->setDate($chatMessage->getCreated())
                 ->setExternal($chatMessage->getId()); // идентификатор сообщения в Озон
