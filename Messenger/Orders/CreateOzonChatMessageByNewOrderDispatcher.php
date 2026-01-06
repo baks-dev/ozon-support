@@ -99,6 +99,7 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
 
         if(false === $OrderEvent->isDeliveryTypeEquals(TypeDeliveryFbsOzon::TYPE))
         {
+            $Deduplicator->save();
             return;
         }
 
@@ -272,6 +273,10 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
         }
 
         $msg .= PHP_EOL.'Обращаем Ваше внимание, что возврат товара будет возможен только в случае возникновения гарантийного случая или после предварительного согласования условий.';
+
+        $msg .= PHP_EOL.'Для уверенности в Вашем выборе наша команда готова предоставить всю необходимую информацию о продукте и его сертификации. Мы оперативно ответим на все Ваши вопросы.';
+
+        $msg .= PHP_EOL.'Спасибо что выбрали наш магазин для покупки!';
 
         $supportMessageDTO = new SupportMessageDTO()
             ->setName('auto (Bot Seller)')
