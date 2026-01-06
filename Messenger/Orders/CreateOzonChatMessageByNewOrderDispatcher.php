@@ -108,6 +108,31 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
         }
 
         /**
+         * Дедубликатор по номеру заказа
+         */
+
+        $number = $OrderEvent->getOrderNumber();
+
+        $pos = strrpos($OrderEvent->getOrderNumber(), '-'); // находим позицию последнего тире
+
+        if($pos !== false)
+        {
+            $number = substr($number, 0, $pos);
+        }
+
+        $DeduplicatorNumber = $this->deduplicator
+            ->namespace('orders-order')
+            ->deduplication([
+                $number,
+                self::class,
+            ]);
+
+        if($DeduplicatorNumber->isExecuted())
+        {
+            return;
+        }
+
+        /**
          * Создаем чат с пользователем
          */
 
@@ -136,7 +161,7 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
             ->setProfile($OrderEvent->getOrderProfile())
             ->setType(new TypeProfileUid(OzonSupportProfileType::TYPE))
             ->setTicket($chatId)
-            ->setTitle(sprintf('Заказ #%s', $OrderEvent->getOrderNumber()));
+            ->setTitle(sprintf('Заказ #%s', $number));
 
         $SupportDTO->setInvariable($SupportInvariableDTO);
 
@@ -147,10 +172,10 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
 
         $msg = sprintf(
             'Здравствуйте! Спасибо за Ваш заказ #%s.',
-            $OrderEvent->getOrderNumber(),
+            $number,
         );
 
-        $msg .= PHP_EOL.'Настоятельно рекомендуем Вас проверить, соответствуют ли характеристики товара Вашим требованиям.';
+        $msg .= PHP_EOL.'Настоятельно рекомендуем Вам проверить, соответствуют ли характеристики товара Вашим требованиям:';
 
         foreach($OrderEvent->getProduct() as $OrderProduct)
         {
@@ -199,6 +224,7 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
                 $ProductDetailByEventResult->getProductModificationReference().'_render',
             );
 
+
             $name .= $modification ? ' '.trim($modification) : '';
 
 
@@ -219,9 +245,33 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
             $name .= $ProductDetailByEventResult->getProductModificationPostfix() ? ' '.$ProductDetailByEventResult->getProductModificationPostfix() : '';
 
             $msg .= PHP_EOL.$name;
+
+            /** Перечисляем характеристики */
+
+            $characteristic = null;
+
+            if($ProductDetailByEventResult->getProductVariationValue())
+            {
+                $characteristic[] = $ProductDetailByEventResult->getProductVariationName().': '.$ProductDetailByEventResult->getProductVariationValue();
+            }
+
+            if($ProductDetailByEventResult->getProductModificationValue())
+            {
+                $characteristic[] = $ProductDetailByEventResult->getProductModificationName().': '.$ProductDetailByEventResult->getProductModificationValue();
+            }
+
+            if($ProductDetailByEventResult->getProductOfferValue())
+            {
+                $characteristic[] = $ProductDetailByEventResult->getProductOfferName().': '.$ProductDetailByEventResult->getProductOfferValue();
+            }
+
+            if(false === empty($characteristic))
+            {
+                $msg .= PHP_EOL.implode(', ', $characteristic);
+            }
         }
 
-        $msg .= PHP_EOL.'Обращаем ваше внимание, что возврат товара возможен только в случае возникновения гарантийного случая или после предварительного согласования условий.';
+        $msg .= PHP_EOL.'Обращаем Ваше внимание, что возврат товара будет возможен только в случае возникновения гарантийного случая или после предварительного согласования условий.';
 
         $supportMessageDTO = new SupportMessageDTO()
             ->setName('auto (Bot Seller)')
@@ -243,6 +293,12 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
                     $SupportDTO->getInvariable()?->getTicket(),
                 ],
             );
+
+            return;
         }
+
+        $DeduplicatorNumber->save();
+
+        $Deduplicator->save();
     }
 }
