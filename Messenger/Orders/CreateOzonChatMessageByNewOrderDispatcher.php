@@ -91,15 +91,15 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
             return;
         }
 
-        /** Если статус не New «Новый»  */
-        if(false === $OrderEvent->isStatusEquals(OrderStatusNew::class))
-        {
-            return;
-        }
-
         if(false === $OrderEvent->isDeliveryTypeEquals(TypeDeliveryFbsOzon::TYPE))
         {
             $Deduplicator->save();
+            return;
+        }
+
+        /** Если статус не New «Новый»  */
+        if(false === $OrderEvent->isStatusEquals(OrderStatusNew::class))
+        {
             return;
         }
 
