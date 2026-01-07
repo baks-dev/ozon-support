@@ -173,7 +173,7 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
 
         $msg = sprintf(
             'Здравствуйте! Спасибо за Ваш заказ #%s.',
-            $number,
+            str_replace('O-', '', $number),
         );
 
         $msg .= PHP_EOL.'Настоятельно рекомендуем Вам проверить, соответствуют ли характеристики товара Вашим требованиям:';
