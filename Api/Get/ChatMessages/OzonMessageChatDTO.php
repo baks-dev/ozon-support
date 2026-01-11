@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +57,7 @@ final readonly class OzonMessageChatDTO
     private string $data;
 
     /** ВНУТРЕННИЙ ПАРАМЕТР. Заголовок сообщений о возврате. */
-    private ?string $refundTitle;
+    private ?string $returnTitle;
 
 
     /**
@@ -82,12 +82,12 @@ final readonly class OzonMessageChatDTO
 
         if($data['is_image'])
         {
-            $this->refundTitle = null;
+            $this->returnTitle = null;
             $this->data = current($message);
             return;
         }
 
-        $this->refundTitle = null;
+        $this->returnTitle = null;
         $message = implode(PHP_EOL, str_replace(['  ', PHP_EOL], ' ', $message));
         $this->data = str_replace('  ', ' ', $message);
 
@@ -216,9 +216,9 @@ final readonly class OzonMessageChatDTO
     }
 
     /** ВНУТРЕННИЙ ПАРАМЕТР. Заголовок сообщений о возврате. */
-    public function getRefundTitle(): ?string
+    public function getReturnTitle(): ?string
     {
-        return $this->refundTitle;
+        return $this->returnTitle;
     }
 }
 

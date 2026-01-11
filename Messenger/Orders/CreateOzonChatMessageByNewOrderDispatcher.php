@@ -54,7 +54,10 @@ use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Twig\Environment;
 
-#[AsMessageHandler(priority: -100)]
+/**
+ * Создаем чат с клиентом Ozon с уточнением характеристик
+ */
+#[AsMessageHandler(priority: -99)]
 final readonly class CreateOzonChatMessageByNewOrderDispatcher
 {
     public function __construct(

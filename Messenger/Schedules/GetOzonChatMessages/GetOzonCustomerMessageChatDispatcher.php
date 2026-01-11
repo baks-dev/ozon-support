@@ -149,11 +149,11 @@ final class GetOzonCustomerMessageChatDispatcher
             }
 
             // определяем возврат - подставляем в заголовок
-            $refund = $firstMessage->getRefundTitle();
+            $returnTitle = $firstMessage->getReturnTitle();
 
-            if(false === empty($refund))
+            if(false === empty($returnTitle))
             {
-                $title = 'Возврат № '.$refund;
+                $title = 'Возврат № '.$returnTitle;
             }
 
             $supportInvariableDTO->setTitle($title);
