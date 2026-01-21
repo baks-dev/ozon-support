@@ -152,6 +152,8 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
             return;
         }
 
+        $DeduplicatorNumber->save();
+
         /** Создаем тикет с сообщением */
         $SupportDTO = new SupportDTO()
             ->setPriority(new SupportPriority(SupportPriorityLow::class)) // CustomerMessage - низкий приоритет
@@ -305,7 +307,6 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
             return;
         }
 
-        $DeduplicatorNumber->save();
 
         $Deduplicator->save();
     }
