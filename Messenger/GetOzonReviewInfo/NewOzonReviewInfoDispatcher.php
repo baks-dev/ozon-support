@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -98,13 +98,13 @@ final readonly class NewOzonReviewInfoDispatcher
             return;
         }
 
-        /** @var OzonReviewInfoDTO $reviewInfo */
-        $reviewInfo = $this->getOzonReviewInfoRequest
+        /** @var OzonReviewInfoDTO $OzonReviewInfoDTO */
+        $OzonReviewInfoDTO = $this->getOzonReviewInfoRequest
             ->forTokenIdentifier($message->getIdentifier())
             ->getReviewInfo($message->getReviewId());
 
         // при ошибке от Ozon API - повторяем запрос через 10 минут
-        if(false === ($reviewInfo instanceof OzonReviewInfoDTO))
+        if(false === ($OzonReviewInfoDTO instanceof OzonReviewInfoDTO))
         {
             $this->messageDispatch->dispatch(
                 $message,
@@ -120,6 +120,9 @@ final readonly class NewOzonReviewInfoDispatcher
         ->setPriority(new SupportPriority(SupportPriorityLow::class)) // Для отзывов - низкий приоритет
         ->setStatus(new SupportStatus(SupportStatusOpen::class)); // Для нового отзыва - StatusOpen
 
+        /** Присваиваем рейтинг */
+        $SupportDTO->getRating()->setValue($OzonReviewInfoDTO->getRating());
+
         /** Присваиваем токен для последующего поиска */
         $SupportTokenDTO = new SupportTokenDTO()
             ->setValue($message->getIdentifier());
@@ -130,17 +133,17 @@ final readonly class NewOzonReviewInfoDispatcher
         $supportInvariableDTO = new SupportInvariableDTO()
             //->setProfile($message->getProfile())
             ->setType(new TypeProfileUid(OzonReviewProfileType::TYPE))
-            ->setTicket($reviewInfo->getId())
-            ->setTitle($reviewInfo->getTitle());
+            ->setTicket($OzonReviewInfoDTO->getId())
+            ->setTitle($OzonReviewInfoDTO->getTitle());
 
         $SupportDTO->setInvariable($supportInvariableDTO);
 
         /** SupportMessage */
         $supportMessageDTO = new SupportMessageDTO()
-            ->setExternal($reviewInfo->getSku())
+            ->setExternal($OzonReviewInfoDTO->getSku())
             ->setName('пользователь')
-            ->setMessage($reviewInfo->getMessage()) // Текст отзыва (с текстом и вложениями)
-            ->setDate($reviewInfo->getPublished())
+            ->setMessage($OzonReviewInfoDTO->getMessage()) // Текст отзыва (с текстом и вложениями)
+            ->setDate($OzonReviewInfoDTO->getPublished())
             ->setInMessage();
 
         $SupportDTO->addMessage($supportMessageDTO);
@@ -175,10 +178,10 @@ final readonly class NewOzonReviewInfoDispatcher
          * - отвечает контент менеджер
          */
 
-        if($reviewInfo->getRating() === 5 || empty($reviewInfo->getText()))
+        if($OzonReviewInfoDTO->getRating() === 5 || empty($OzonReviewInfoDTO->getText()))
         {
             $this->messageDispatch->dispatch(
-                message: new AutoReplyOzonReviewMessage($result->getId(), $reviewInfo->getRating()),
+                message: new AutoReplyOzonReviewMessage($result->getId(), $OzonReviewInfoDTO->getRating()),
                 transport: 'ozon-support',
             );
         }
