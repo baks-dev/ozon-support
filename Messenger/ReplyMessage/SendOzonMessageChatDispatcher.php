@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\ReplyMessage;
 
+use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
@@ -51,6 +52,7 @@ final readonly class SendOzonMessageChatDispatcher
         private MessageDispatchInterface $messageDispatch,
         private CurrentSupportEventRepository $currentSupportEvent,
         private SendOzonMessageChatRequest $sendMessageRequest,
+        private DeduplicatorInterface $deduplicator,
     ) {}
 
     /**
@@ -62,6 +64,15 @@ final readonly class SendOzonMessageChatDispatcher
      */
     public function __invoke(SupportMessage $message): void
     {
+
+        $Deduplicator = $this->deduplicator
+            ->namespace('support')
+            ->deduplication([$message->getId(), self::class]);
+
+        if($Deduplicator->isExecuted())
+        {
+            return;
+        }
 
         $CurrentSupportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
@@ -76,6 +87,26 @@ final readonly class SendOzonMessageChatDispatcher
 
             return;
         }
+
+
+        /**
+         * Пропускаем если тикет не является Wildberries Support Chat «Чат с покупателем»
+         */
+
+        if(false === $CurrentSupportEvent->isTypeEquals(OzonSupportProfileType::TYPE))
+        {
+            $Deduplicator->save();
+            return;
+        }
+
+        /**
+         * Ответ только на закрытый тикет
+         */
+        if(false === ($CurrentSupportEvent->isStatusEquals(SupportStatusClose::class)))
+        {
+            return;
+        }
+
 
         $OzonSupportToken = $CurrentSupportEvent->getToken()?->getValue();
 
@@ -100,19 +131,6 @@ final readonly class SendOzonMessageChatDispatcher
             return;
         }
 
-        // проверяем тип профиля
-        $typeProfile = $SupportInvariableDTO->getType();
-
-        if(false === $typeProfile->equals(OzonSupportProfileType::TYPE))
-        {
-            return;
-        }
-
-        /** Проверяем что чат закрыт */
-        if(false === $SupportDTO->getStatus()->equals(SupportStatusClose::class))
-        {
-            return;
-        }
 
         /** @var SupportMessageDTO $lastMessage */
         $lastMessage = $SupportDTO->getMessages()->last();

@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\ReplyToReview;
 
+use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Ozon\Support\Type\OzonReviewProfileType;
 use BaksDev\Support\Answer\Service\AutoMessagesReply;
 use BaksDev\Support\Entity\Event\SupportEvent;
@@ -53,6 +54,7 @@ final readonly class AutoReplyOzonReviewDispatcher
         #[Target('ozonSupportLogger')] private LoggerInterface $logger,
         private SupportHandler $SupportHandler,
         private CurrentSupportEventRepository $CurrentSupportEventRepository,
+        private DeduplicatorInterface $deduplicator,
     ) {}
 
     /**
@@ -62,6 +64,17 @@ final readonly class AutoReplyOzonReviewDispatcher
      */
     public function __invoke(AutoReplyOzonReviewMessage $message): void
     {
+
+        $Deduplicator = $this->deduplicator
+            ->namespace('support')
+            ->deduplication([$message->getId(), self::class]);
+
+        if($Deduplicator->isExecuted())
+        {
+            return;
+        }
+
+
         $CurrentSupportEvent = $this->CurrentSupportEventRepository
             ->forSupport($message->getId())
             ->find();
@@ -77,14 +90,27 @@ final readonly class AutoReplyOzonReviewDispatcher
         }
 
 
-        /** @var SupportDTO $SupportDTO */
-        $SupportDTO = $CurrentSupportEvent->getDto(SupportDTO::class);
+        /**
+         * Пропускаем если тикет не является Ozon Review «Отзыв»
+         */
 
-        // обрабатываем только на открытый тикет
-        if(false === ($SupportDTO->getStatus()->getSupportStatus() instanceof SupportStatusOpen))
+        if(false === $CurrentSupportEvent->isTypeEquals(OzonReviewProfileType::TYPE))
+        {
+            $Deduplicator->save();
+            return;
+        }
+
+        /**
+         * Ответ только на ОТКРЫТЫЙ тикет
+         */
+        if(false === ($CurrentSupportEvent->isStatusEquals(SupportStatusOpen::class)))
         {
             return;
         }
+
+
+        /** @var SupportDTO $SupportDTO */
+        $SupportDTO = $CurrentSupportEvent->getDto(SupportDTO::class);
 
         $supportInvariableDTO = $SupportDTO->getInvariable();
 
@@ -93,13 +119,6 @@ final readonly class AutoReplyOzonReviewDispatcher
             return;
         }
 
-        // проверяем тип профиля у чата
-        $TypeProfileUid = $supportInvariableDTO->getType();
-
-        if(false === $TypeProfileUid->equals(OzonReviewProfileType::TYPE))
-        {
-            return;
-        }
 
         // формируем сообщение в зависимости от условий отзыва
         $reviewRating = $message->getRating();
@@ -142,7 +161,7 @@ final readonly class AutoReplyOzonReviewDispatcher
         {
             $this->logger->critical(
                 'ozon-support: Ошибка при отправке автоматического ответа на отзыв',
-                [$Support, self::class.':'.__LINE__]
+                [$Support, self::class.':'.__LINE__],
             );
         }
     }

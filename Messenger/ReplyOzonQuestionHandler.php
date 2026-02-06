@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger;
 
+use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\Question\PostOzonQuestionAnswerRequest;
@@ -50,6 +51,7 @@ final readonly class ReplyOzonQuestionHandler
         private MessageDispatchInterface $messageDispatch,
         private CurrentSupportEventRepository $currentSupportEvent,
         private PostOzonQuestionAnswerRequest $PostOzonQuestionAnswerRequest,
+        private DeduplicatorInterface $deduplicator,
     ) {}
 
     /**
@@ -61,6 +63,15 @@ final readonly class ReplyOzonQuestionHandler
      */
     public function __invoke(SupportMessage $message): void
     {
+
+        $Deduplicator = $this->deduplicator
+            ->namespace('support')
+            ->deduplication([$message->getId(), self::class]);
+
+        if($Deduplicator->isExecuted())
+        {
+            return;
+        }
 
         $CurrentSupportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
@@ -76,6 +87,24 @@ final readonly class ReplyOzonQuestionHandler
             return;
         }
 
+
+        /**
+         * Пропускаем если тикет не является Support Question «Вопрос»
+         */
+
+        if(false === $CurrentSupportEvent->isTypeEquals(OzonQuestionProfileType::TYPE))
+        {
+            $Deduplicator->save();
+            return;
+        }
+
+        /**
+         * Ответ только на закрытый тикет
+         */
+        if(false === ($CurrentSupportEvent->isStatusEquals(SupportStatusClose::class)))
+        {
+            return;
+        }
 
         $OzonSupportToken = $CurrentSupportEvent->getToken()?->getValue();
 
@@ -101,24 +130,6 @@ final readonly class ReplyOzonQuestionHandler
         }
 
         /**
-         * Пропускаем если тикет не является Support Question «Вопрос»
-         */
-        $TypeProfileUid = $SupportInvariableDTO->getType();
-
-        if(false === $TypeProfileUid->equals(OzonQuestionProfileType::TYPE))
-        {
-            return;
-        }
-
-        /**
-         * Ответ только на закрытый тикет
-         */
-        if(false === ($SupportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose))
-        {
-            return;
-        }
-
-        /**
          * Первое сообщение, содержащее идентификатор SKU
          *
          * @var SupportMessageDTO $firstMessage
@@ -131,7 +142,6 @@ final readonly class ReplyOzonQuestionHandler
         {
             return;
         }
-
 
         /**
          * Последнее сообщение для ответа

@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\ReplyToReview;
 
+use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Support\Api\ReviewComments\Post\PostOzonReviewCommentRequest;
@@ -50,6 +51,7 @@ final readonly class ReplyOzonReviewDispatcher
         private MessageDispatchInterface $messageDispatch,
         private PostOzonReviewCommentRequest $postCommentRequest,
         private CurrentSupportEventRepository $currentSupportEvent,
+        private DeduplicatorInterface $deduplicator,
     ) {}
 
     /**
@@ -58,6 +60,15 @@ final readonly class ReplyOzonReviewDispatcher
      */
     public function __invoke(SupportMessage $message): void
     {
+        $Deduplicator = $this->deduplicator
+            ->namespace('support')
+            ->deduplication([$message->getId(), self::class]);
+
+        if($Deduplicator->isExecuted())
+        {
+            return;
+        }
+
         $CurrentSupportEvent = $this->currentSupportEvent
             ->forSupport($message->getId())
             ->find();
@@ -71,6 +82,26 @@ final readonly class ReplyOzonReviewDispatcher
 
             return;
         }
+
+
+        /**
+         * Пропускаем если тикет не является Ozon Review «Отзыв»
+         */
+
+        if(false === $CurrentSupportEvent->isTypeEquals(OzonReviewProfileType::TYPE))
+        {
+            $Deduplicator->save();
+            return;
+        }
+
+        /**
+         * Ответ только на закрытый тикет
+         */
+        if(false === ($CurrentSupportEvent->isStatusEquals(SupportStatusClose::class)))
+        {
+            return;
+        }
+
 
         $OzonSupportToken = $CurrentSupportEvent->getToken()?->getValue();
 
@@ -89,12 +120,6 @@ final readonly class ReplyOzonReviewDispatcher
         /** @var SupportDTO $SupportDTO */
         $SupportDTO = $CurrentSupportEvent->getDto(SupportDTO::class);
 
-        // обрабатываем только закрытые тикеты
-        if(false === ($SupportDTO->getStatus()->getSupportStatus() instanceof SupportStatusClose))
-        {
-            return;
-        }
-
         $SupportInvariableDTO = $SupportDTO->getInvariable();
 
         if(false === ($SupportInvariableDTO instanceof SupportInvariableDTO))
@@ -102,13 +127,6 @@ final readonly class ReplyOzonReviewDispatcher
             return;
         }
 
-        // проверяем тип профиля у чата
-        $TypeProfileUid = $SupportInvariableDTO->getType();
-
-        if(false === $TypeProfileUid->equals(OzonReviewProfileType::TYPE))
-        {
-            return;
-        }
 
         // последнее сообщение в закрытом чате = наш ответ
         /** @var SupportMessageDTO $lastMessage */
