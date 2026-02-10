@@ -84,11 +84,6 @@ final class OzonReviewListRequest extends Ozon
      */
     public function getReviewList(): bool|Generator
     {
-        if(false === ($this->getProfile() instanceof UserProfileUid))
-        {
-            return false;
-        }
-
         if(false === $this->sort)
         {
             throw new InvalidArgumentException('Не передан параметр запроса $sort');

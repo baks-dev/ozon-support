@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,8 @@ namespace BaksDev\Ozon\Support\Api\Question\News;
 
 use BaksDev\Ozon\Api\Ozon;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
+use DateInterval;
+use DateTimeImmutable;
 use Generator;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -45,7 +47,7 @@ final class GetOzonQuestionsRequest extends Ozon
      * UNPROCESSED — необработанный.
      */
     // private string $status = 'ALL';
-    private string $status = 'NEW';
+    private string $status = 'ALL';
 
     /**
      * Список вопросов
@@ -54,16 +56,19 @@ final class GetOzonQuestionsRequest extends Ozon
      */
     public function findAll(): false|Generator
     {
-        if(false === ($this->getProfile() instanceof UserProfileUid))
-        {
-            return false;
-        }
-
         while(true)
         {
             $json = [
                 'filter' => [
-                    "status" => $this->status
+
+                    "date_from" => new DateTimeImmutable()
+                        ->sub(DateInterval::createFromDateString('1 day'))
+                        ->modify('-1 day')
+                        ->format('Y-m-d\TH:i:s\Z'),
+
+                    "date_to" => (new DateTimeImmutable())->format('Y-m-d\TH:i:s\Z'),
+
+                    "status" => $this->status,
                 ],
 
                 'last_id' => $this->last,
@@ -73,7 +78,7 @@ final class GetOzonQuestionsRequest extends Ozon
                 ->request(
                     'POST',
                     '/v1/question/list',
-                    ["json" => $json]
+                    ["json" => $json],
                 );
 
             $content = $response->toArray(false);
@@ -90,7 +95,7 @@ final class GetOzonQuestionsRequest extends Ozon
                     sprintf('ozon-support: Ошибка получения списка вопросов'),
                     [
                         self::class.':'.__LINE__,
-                        $content
+                        $content,
                     ]);
 
                 return false;
