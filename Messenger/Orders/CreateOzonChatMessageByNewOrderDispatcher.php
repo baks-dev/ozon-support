@@ -27,6 +27,7 @@ namespace BaksDev\Ozon\Support\Messenger\Orders;
 
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
+use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Core\Twig\CallTwigFuncExtension;
 use BaksDev\Orders\Order\Entity\Event\OrderEvent;
 use BaksDev\Orders\Order\Messenger\OrderMessage;
@@ -67,17 +68,16 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
         private CreateOzonChatRequest $CreateOzonChatRequest,
         private SupportHandler $SupportHandler,
         private ProductDetailByEventInterface $ProductDetailByEventRepository,
-        private Environment $environment
-
+        private Environment $environment,
     ) {}
 
-    public function __invoke(OrderMessage $message): void
+    public function __invoke(CreateOzonChatMessageByNewOrderMessage $message): void
     {
         /** Не отправляем сообщение дважды */
         $Deduplicator = $this->deduplicator
             ->namespace('orders-order')
             ->deduplication([
-                (string) $message->getId(),
+                (string) $message->getOrderId(),
                 self::class,
             ]);
 
@@ -87,26 +87,9 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
         }
 
         $OrderEvent = $this->orderEventRepository
-            ->find($message->getEvent());
+            ->find($message->getOrderEvent());
 
         if(false === ($OrderEvent instanceof OrderEvent))
-        {
-            return;
-        }
-
-        if(false === $OrderEvent->isDeliveryTypeEquals(TypeDeliveryFbsOzon::TYPE))
-        {
-            $Deduplicator->save();
-            return;
-        }
-
-        /** Если статус не New «Новый»  */
-        if(false === $OrderEvent->isStatusEquals(OrderStatusNew::class))
-        {
-            return;
-        }
-
-        if(is_null($OrderEvent->getOrderTokenIdentifier()))
         {
             return;
         }
@@ -128,6 +111,7 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
             ->namespace('orders-order')
             ->deduplication([
                 $number,
+                $OrderEvent->getOrderTokenIdentifier(),
                 self::class,
             ]);
 
@@ -135,6 +119,7 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
         {
             return;
         }
+
 
         /**
          * Создаем чат с пользователем
