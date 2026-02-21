@@ -98,19 +98,11 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
          * Дедубликатор по номеру заказа
          */
 
-        $number = $OrderEvent->getOrderNumber();
-
-        $pos = strrpos($OrderEvent->getOrderNumber(), '-'); // находим позицию последнего тире
-
-        if($pos !== false)
-        {
-            $number = substr($number, 0, $pos);
-        }
 
         $DeduplicatorNumber = $this->deduplicator
             ->namespace('orders-order')
             ->deduplication([
-                $number,
+                $OrderEvent->getOrderNumber(),
                 $OrderEvent->getOrderTokenIdentifier(),
                 self::class,
             ]);
@@ -120,7 +112,6 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
             return;
         }
 
-
         /**
          * Создаем чат с пользователем
          */
@@ -129,7 +120,7 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
 
         $chatId = $this->CreateOzonChatRequest
             ->forTokenIdentifier($OzonTokenUid)
-            ->order($OrderEvent->getOrderNumber())
+            ->order($OrderEvent->getPostingNumber())
             ->create();
 
         if(is_bool($chatId))
@@ -152,7 +143,7 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
             ->setProfile($OrderEvent->getOrderProfile())
             ->setType(new TypeProfileUid(OzonSupportProfileType::TYPE))
             ->setTicket($chatId)
-            ->setTitle(sprintf('Заказ #%s', $number));
+            ->setTitle(sprintf('Заказ #%s', $OrderEvent->getOrderNumber()));
 
         $SupportDTO->setInvariable($SupportInvariableDTO);
 
@@ -163,7 +154,7 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
 
         $msg = sprintf(
             'Здравствуйте! Спасибо за Ваш заказ #%s.',
-            str_replace('O-', '', $number),
+            str_replace('O-', '', $OrderEvent->getOrderNumber()),
         );
 
         $msg .= PHP_EOL.'Настоятельно рекомендуем Вам проверить, соответствуют ли характеристики товара Вашим требованиям:';
