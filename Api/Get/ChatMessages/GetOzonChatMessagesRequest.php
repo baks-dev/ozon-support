@@ -29,10 +29,12 @@ use BaksDev\Ozon\Api\Ozon;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Generator;
 use InvalidArgumentException;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * Возвращает историю сообщений чата.
  */
+#[Autoconfigure(public: true)]
 final class GetOzonChatMessagesRequest extends Ozon
 {
     /**

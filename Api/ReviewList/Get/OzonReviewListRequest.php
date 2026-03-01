@@ -29,9 +29,11 @@ use BaksDev\Ozon\Api\Ozon;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Generator;
 use InvalidArgumentException;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Contracts\Cache\ItemInterface;
 use Webmozart\Assert\Assert;
 
+#[Autoconfigure(public: true)]
 final class OzonReviewListRequest extends Ozon
 {
     public const string STATUS_ALL = 'ALL';

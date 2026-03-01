@@ -28,10 +28,12 @@ namespace BaksDev\Ozon\Support\Api\Get\ChatList;
 use BaksDev\Ozon\Api\Ozon;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Generator;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * Возвращает информацию о чатах по указанным фильтрам.
  */
+#[Autoconfigure(public: true)]
 final class GetOzonChatListRequest extends Ozon
 {
     /**

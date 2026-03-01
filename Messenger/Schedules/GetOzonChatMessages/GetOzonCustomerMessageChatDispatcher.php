@@ -52,7 +52,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 /**
  * Получает новые сообщения Ozon
  */
-#[AsMessageHandler]
+#[AsMessageHandler(priority: 0)]
 final class GetOzonCustomerMessageChatDispatcher
 {
     private bool $isAddMessage = false;

@@ -47,7 +47,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * preview @see NewOzonReviewInfoDispatcher
  * next @see ReplyOzonReviewDispatcher
  */
-#[AsMessageHandler]
+#[AsMessageHandler(priority: 0)]
 final readonly class AutoReplyOzonReviewDispatcher
 {
     public function __construct(
