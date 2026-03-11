@@ -34,7 +34,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 /**
  * Возвращает историю сообщений чата.
  */
-#[Autoconfigure(public: true)]
+// #[Autoconfigure(public: true)]
 final class GetOzonChatMessagesRequest extends Ozon
 {
     /**

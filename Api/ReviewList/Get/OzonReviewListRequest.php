@@ -33,7 +33,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Contracts\Cache\ItemInterface;
 use Webmozart\Assert\Assert;
 
-#[Autoconfigure(public: true)]
+// #[Autoconfigure(public: true)]
 final class OzonReviewListRequest extends Ozon
 {
     public const string STATUS_ALL = 'ALL';
