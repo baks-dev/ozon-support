@@ -88,8 +88,8 @@ final class MarkReadingOzonMessageChatRequest extends Ozon
                     "json" => [
                         'chat_id' => $this->chatId,
                         'from_message_id' => $this->fromMessage,
-                    ]
-                ]
+                    ],
+                ],
             );
 
         if($response->getStatusCode() !== 200)

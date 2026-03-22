@@ -35,17 +35,6 @@ final class OzonReviewProfileType implements TypeProfileInterface
     /** UUIDv7 */
     public const string TYPE = '9ccd393f-bd13-7e01-b821-10efcc0175bb';
 
-    public function __toString(): string
-    {
-        return self::TYPE;
-    }
-
-    /** Возвращает значение (value) */
-    public function getValue(): string
-    {
-        return self::TYPE;
-    }
-
     /** Сортировка */
     public static function priority(): int
     {
@@ -55,5 +44,16 @@ final class OzonReviewProfileType implements TypeProfileInterface
     public static function equals(mixed $uid): bool
     {
         return self::TYPE === (string) $uid;
+    }
+
+    public function __toString(): string
+    {
+        return self::TYPE;
+    }
+
+    /** Возвращает значение (value) */
+    public function getValue(): string
+    {
+        return self::TYPE;
     }
 }

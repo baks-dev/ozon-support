@@ -86,21 +86,6 @@ final readonly class OzonReviewInfoDTO
         return $this->text;
     }
 
-    /**
-     * Статус заказа, на который покупатель оставил отзыв:
-     * — DELIVERED — доставлен,
-     * — CANCELLED — отменён.
-     */
-    public function getOrderStatus(): string
-    {
-        return match ($this->orderStatus)
-        {
-            'DELIVERED' => 'ДОСТАВЛЕН',
-            'CANCELLED' => 'ОТМЕНЕН',
-            default => 'НЕИЗВЕСТНЫЙ СТАТУС',
-        };
-    }
-
     /** Дата публикации комментария */
     public function getPublished(): DateTimeImmutable
     {
@@ -150,5 +135,20 @@ final readonly class OzonReviewInfoDTO
         };
 
         return sprintf('<span class="badge text-bg-%s align-middle">%s</span> &nbsp; %s', $rating, $this->rating, $this->getOrderStatus());
+    }
+
+    /**
+     * Статус заказа, на который покупатель оставил отзыв:
+     * — DELIVERED — доставлен,
+     * — CANCELLED — отменён.
+     */
+    public function getOrderStatus(): string
+    {
+        return match ($this->orderStatus)
+        {
+            'DELIVERED' => 'ДОСТАВЛЕН',
+            'CANCELLED' => 'ОТМЕНЕН',
+            default => 'НЕИЗВЕСТНЫЙ СТАТУС',
+        };
     }
 }

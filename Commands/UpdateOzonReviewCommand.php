@@ -85,7 +85,7 @@ final class UpdateOzonReviewCommand extends Command
         $question = new ChoiceQuestion(
             'Профиль пользователя (Ctrl+C чтобы выйти)',
             $questions,
-            '0'
+            '0',
         );
 
         $key = $helper->ask($input, $output, $question);
@@ -152,7 +152,7 @@ final class UpdateOzonReviewCommand extends Command
 
         $this->messageDispatch->dispatch(
             message: new OzonReviewListMessage($profile),
-            transport: $async === true ? (string) $profile : null
+            transport: $async === true ? (string) $profile : null,
         );
     }
 }

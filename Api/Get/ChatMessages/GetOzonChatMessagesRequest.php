@@ -129,14 +129,14 @@ final class GetOzonChatMessagesRequest extends Ozon
             "chat_id" => $this->chat,
             "direction" => $this->sort,
             "from_message_id" => $this->fromMessage,
-            "limit" => $this->limit
+            "limit" => $this->limit,
         ];
 
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',
                 '/v3/chat/history',
-                ["json" => $json]
+                ["json" => $json],
             );
 
         $content = $response->toArray(false);
@@ -148,7 +148,7 @@ final class GetOzonChatMessagesRequest extends Ozon
                 [
                     self::class.':'.__LINE__,
                     $json,
-                    $content
+                    $content,
                 ]);
 
             return false;

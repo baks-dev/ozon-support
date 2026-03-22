@@ -74,6 +74,7 @@ final class PostOzonReviewCommentRequest extends Ozon
 
     /**
      * Оставить комментарий на отзыв
+     *
      * @see https://docs.ozon.ru/api/seller/#operation/ReviewAPI_CommentCreate
      */
     public function postReviewComment(): string|bool
@@ -104,8 +105,8 @@ final class PostOzonReviewCommentRequest extends Ozon
                         "parent_comment_id" => $this->parentCommentId ?: null,
                         "review_id" => $this->reviewId,
                         "text" => $this->text,
-                    ]
-                ]
+                    ],
+                ],
             );
 
         $result = $response->toArray(false);
@@ -124,7 +125,7 @@ final class PostOzonReviewCommentRequest extends Ozon
                 message: $message,
                 context: [
                     self::class.':'.__LINE__,
-                    $result
+                    $result,
                 ]);
 
             return false;
@@ -138,7 +139,7 @@ final class PostOzonReviewCommentRequest extends Ozon
                 message: $message,
                 context: [
                     self::class.':'.__LINE__,
-                    $result
+                    $result,
                 ]);
 
             return false;

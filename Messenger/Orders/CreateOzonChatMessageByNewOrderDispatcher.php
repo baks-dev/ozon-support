@@ -112,6 +112,8 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
             return;
         }
 
+        $DeduplicatorNumber->save();
+
         /**
          * Создаем чат с пользователем
          */
@@ -127,8 +129,6 @@ final readonly class CreateOzonChatMessageByNewOrderDispatcher
         {
             return;
         }
-
-        $DeduplicatorNumber->save();
 
         /** Создаем тикет с сообщением */
         $SupportDTO = new SupportDTO()

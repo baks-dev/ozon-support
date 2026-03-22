@@ -69,7 +69,7 @@ final class PostOzonQuestionsViewedRequest extends Ozon
 
         $json = [
             'question_ids' => $this->question,
-            "status" => "VIEWED"
+            "status" => "VIEWED",
         ];
 
 
@@ -77,7 +77,7 @@ final class PostOzonQuestionsViewedRequest extends Ozon
             ->request(
                 'POST',
                 '/v1/question/change_status',
-                ["json" => $json]
+                ["json" => $json],
             );
 
         if($response->getStatusCode() !== 200)
@@ -86,7 +86,7 @@ final class PostOzonQuestionsViewedRequest extends Ozon
                 [
                     self::class.':'.__LINE__,
                     $response->toArray(false),
-                    $json
+                    $json,
                 ]);
         }
 

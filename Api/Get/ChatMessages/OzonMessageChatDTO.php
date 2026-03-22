@@ -206,10 +206,10 @@ final readonly class OzonMessageChatDTO
 
         if(isset($linkMatches[1]))
 
-        if(false === empty($linkMatches))
-        {
-            return sprintf('<a href="%s" target="_blank">Ссылка<a/>', $linkMatches[0]);
-        }
+            if(false === empty($linkMatches))
+            {
+                return sprintf('<a href="%s" target="_blank">Ссылка<a/>', $linkMatches[0]);
+            }
 
         // обычный текст
         return $this->data;

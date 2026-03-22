@@ -33,6 +33,7 @@ final class GetOzonReviewInfoRequest extends Ozon
 
     /**
      * Получить информацию об отзыве
+     *
      * @see https://docs.ozon.ru/api/seller/#operation/ReviewAPI_ReviewInfo
      */
     public function getReviewInfo(string $reviewId): false|OzonReviewInfoDTO
@@ -44,8 +45,8 @@ final class GetOzonReviewInfoRequest extends Ozon
                 options: [
                     "json" => [
                         "review_id" => $reviewId,
-                    ]
-                ]
+                    ],
+                ],
             );
 
         $result = $response->toArray(false);
@@ -58,7 +59,7 @@ final class GetOzonReviewInfoRequest extends Ozon
                 message: $message,
                 context: [
                     self::class.':'.__LINE__,
-                    $result
+                    $result,
                 ]);
 
             return false;
@@ -72,7 +73,7 @@ final class GetOzonReviewInfoRequest extends Ozon
                 message: $message,
                 context: [
                     self::class.':'.__LINE__,
-                    $result
+                    $result,
                 ]);
 
             return false;

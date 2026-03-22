@@ -58,7 +58,7 @@ final readonly class OzonReviewDTO
         $this->id = $data['id'];
         $this->sku = $data['sku'];
         $this->text = $data['text'];
-        $this->published = new \DateTimeImmutable($data['published_at']);
+        $this->published = new DateTimeImmutable($data['published_at']);
         $this->rating = $data['rating'];
         $this->status = $data['status'];
         $this->commentsAmount = $data['comments_amount'];
