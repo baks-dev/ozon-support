@@ -30,6 +30,7 @@ use InvalidArgumentException;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Webmozart\Assert\Assert;
 
+#[Autoconfigure(shared: false)]
 final class PostOzonReviewCommentRequest extends Ozon
 {
     private bool $markAsProcessed = false;

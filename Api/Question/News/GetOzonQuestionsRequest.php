@@ -32,7 +32,7 @@ use DateTimeImmutable;
 use Generator;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
-// #[Autoconfigure(public: true)]
+#[Autoconfigure(shared: false)]
 final class GetOzonQuestionsRequest extends Ozon
 {
     private ?string $last = null;

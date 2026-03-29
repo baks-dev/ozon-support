@@ -29,6 +29,7 @@ use BaksDev\Ozon\Api\Ozon;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use InvalidArgumentException;
 
+#[Autoconfigure(shared: false)]
 final class GetOzonFileChatRequest extends Ozon
 {
     private string|false $ticket;

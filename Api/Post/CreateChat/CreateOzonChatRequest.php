@@ -27,7 +27,9 @@ namespace BaksDev\Ozon\Support\Api\Post\CreateChat;
 
 use BaksDev\Ozon\Api\Ozon;
 use InvalidArgumentException;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
+#[Autoconfigure(shared: false)]
 final class CreateOzonChatRequest extends Ozon
 {
     private string $order;

@@ -33,7 +33,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 /**
  * Возвращает информацию о чатах по указанным фильтрам.
  */
-// #[Autoconfigure(public: true)]
+#[Autoconfigure(shared: false)]
 final class GetOzonChatListRequest extends Ozon
 {
     /**

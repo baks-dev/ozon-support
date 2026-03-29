@@ -27,10 +27,12 @@ namespace BaksDev\Ozon\Support\Api\Post\MarkReading;
 
 use BaksDev\Ozon\Api\Ozon;
 use InvalidArgumentException;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * Метод для отметки выбранного сообщения и сообщений до него прочитанными.
  */
+#[Autoconfigure(shared: false)]
 final class MarkReadingOzonMessageChatRequest extends Ozon
 {
     /** Идентификатор чата */

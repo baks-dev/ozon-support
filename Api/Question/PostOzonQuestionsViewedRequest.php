@@ -26,7 +26,9 @@ declare(strict_types=1);
 namespace BaksDev\Ozon\Support\Api\Question;
 
 use BaksDev\Ozon\Api\Ozon;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
+#[Autoconfigure(shared: false)]
 final class PostOzonQuestionsViewedRequest extends Ozon
 {
     private array $question;
@@ -53,9 +55,6 @@ final class PostOzonQuestionsViewedRequest extends Ozon
      */
     public function update(): bool
     {
-
-        /** TODO: тод временно недоступен */
-        return true;
 
         if($this->isExecuteEnvironment() === false)
         {

@@ -34,7 +34,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
  *
  * @see https://docs.ozon.ru/api/seller/#tag/ChatAPI
  */
-// #[Autoconfigure(public: true)]
+#[Autoconfigure(shared: false)]
 final class SendOzonMessageChatRequest extends Ozon
 {
     /** Идентификатор чата */

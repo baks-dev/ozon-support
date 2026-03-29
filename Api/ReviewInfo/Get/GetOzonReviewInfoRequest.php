@@ -27,7 +27,9 @@ namespace BaksDev\Ozon\Support\Api\ReviewInfo\Get;
 
 use BaksDev\Ozon\Api\Ozon;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
+#[Autoconfigure(shared: false)]
 final class GetOzonReviewInfoRequest extends Ozon
 {
 

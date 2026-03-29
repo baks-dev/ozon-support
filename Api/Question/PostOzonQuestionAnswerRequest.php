@@ -27,7 +27,9 @@ namespace BaksDev\Ozon\Support\Api\Question;
 
 use BaksDev\Ozon\Api\Ozon;
 use InvalidArgumentException;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
+#[Autoconfigure(shared: false)]
 final class PostOzonQuestionAnswerRequest extends Ozon
 {
     private string|false $question = false;
