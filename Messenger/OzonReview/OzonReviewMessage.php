@@ -25,10 +25,8 @@ declare(strict_types=1);
 
 namespace BaksDev\Ozon\Support\Messenger\OzonReview;
 
-
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Symfony\Component\Uid\Uuid;
-
 
 final class OzonReviewMessage
 {

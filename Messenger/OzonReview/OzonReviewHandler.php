@@ -43,7 +43,6 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final readonly class OzonReviewHandler
 {
-
     public function __construct(
         private OzonReviewListRequest $reviewListRequest,
         private OzonTokensByProfileInterface $OzonTokensByProfile,

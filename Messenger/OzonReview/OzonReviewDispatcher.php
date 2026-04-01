@@ -53,7 +53,6 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final readonly class OzonReviewDispatcher
 {
-
     public function __construct(
         #[Target('ozonSupportLogger')] private LoggerInterface $logger,
         private NewProductReviewHandler $NewProductReviewHandler,
