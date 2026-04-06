@@ -91,6 +91,7 @@ final readonly class MarkReadingOzonMessageChatDispatcher
             return;
         }
 
+        /** @var SupportDTO $SupportDTO */
         $SupportDTO = $CurrentSupportEvent->getDto(SupportDTO::class);
 
         $SupportInvariableDTO = $SupportDTO->getInvariable();
@@ -118,7 +119,7 @@ final readonly class MarkReadingOzonMessageChatDispatcher
         $lastMessage = $SupportDTO->getMessages()->last();
 
         // проверяем наличие внешнего ID - обязательно для сообщений, поступающий от Ozon API
-        if(is_null($lastMessage->getExternal()))
+        if(empty($lastMessage) || is_null($lastMessage->getExternal()))
         {
             return;
         }
