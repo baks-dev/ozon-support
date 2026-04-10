@@ -40,9 +40,12 @@ use BaksDev\Products\Review\UseCase\CurrentUser\Review\NewEdit\Text\NewProductRe
 use BaksDev\Products\Review\UseCase\CurrentUser\Review\NewEdit\Type\NewProductReviewTypeDTO;
 use BaksDev\Products\Review\UseCase\CurrentUser\Review\NewEdit\User\NewProductReviewUserDTO;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
+use BaksDev\Users\Profile\UserProfile\Repository\RandomUserProfileByProjectUser\RandomUserProfileByProjectUserInterface;
 use BaksDev\Users\Profile\UserProfile\Repository\UserByUserProfile\UserByUserProfileInterface;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -59,6 +62,8 @@ final readonly class OzonReviewDispatcher
         private ProductEventByArticleInterface $eventByArticleRepository,
         private DeduplicatorInterface $deduplicator,
         private UserByUserProfileInterface $userByUserProfile,
+        #[Autowire(env: 'PROJECT_USER')] private string|null $projectUser = null,
+        private RandomUserProfileByProjectUserInterface $profileByProjectUser,
     ) {}
 
     public function __invoke(OzonReviewMessage $message): void
@@ -151,7 +156,22 @@ final readonly class OzonReviewDispatcher
 
         /** Добавить профиль */
 
-        $NewProductReviewProfileDTO = new NewProductReviewProfileDTO()->setValue($message->getProfile());
+        $profile = $message->getProfile();
+
+        if(false === empty($this->projectUser))
+        {
+            /* Получить рандомный профиль (Магазин) по PROJECT_USER из .env */
+            $randomProfile = $this->profileByProjectUser
+                ->forUser($this->projectUser)
+                ->find();
+
+            if(true === ($randomProfile instanceof UserProfileUid))
+            {
+                $profile = $randomProfile;
+            }
+        }
+
+        $NewProductReviewProfileDTO = new NewProductReviewProfileDTO()->setValue($profile);
 
         $productsReviewDTO->setProfile($NewProductReviewProfileDTO);
 
