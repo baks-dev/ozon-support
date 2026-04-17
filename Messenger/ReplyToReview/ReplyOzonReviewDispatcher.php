@@ -127,6 +127,10 @@ final readonly class ReplyOzonReviewDispatcher
             return;
         }
 
+        if(empty($SupportDTO->getMessages()->current()))
+        {
+            return;
+        }
 
         // последнее сообщение в закрытом чате = наш ответ
         /** @var SupportMessageDTO $lastMessage */

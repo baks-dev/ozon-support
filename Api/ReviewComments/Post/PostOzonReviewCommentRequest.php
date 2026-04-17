@@ -120,7 +120,12 @@ final class PostOzonReviewCommentRequest extends Ozon
                 return true;
             }
 
-            $message = sprintf('ozon-support: Код ответа: %s. Ошибка получения списка комментариев на отзыв от Ozon Seller API', $response->getStatusCode());
+            if(str_contains($result['message'], 'cannot'))
+            {
+                return true;
+            }
+
+            $message = sprintf('ozon-support: Код ответа: %s. Ошибка при отправке комментария отзыв от Ozon Seller API', $response->getStatusCode());
 
             $this->logger->critical(
                 message: $message,
