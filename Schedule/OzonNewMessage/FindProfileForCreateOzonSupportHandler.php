@@ -31,6 +31,7 @@ use BaksDev\Ozon\Repository\AllProfileToken\AllProfileOzonTokenInterface;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatList\GetOzonChatListMessage;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -41,6 +42,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * - бросаем сообщение с id профиля для использования в запросах к api Ozon
  */
 #[AsMessageHandler(priority: 0)]
+#[Autoconfigure(shared: false)]
 final readonly class FindProfileForCreateOzonSupportHandler
 {
 

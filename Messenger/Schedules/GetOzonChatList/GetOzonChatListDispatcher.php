@@ -29,6 +29,7 @@ use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\Get\ChatList\GetOzonChatListRequest;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonChatMessages\GetOzonCustomerMessageChatMessage;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
@@ -43,6 +44,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * - создаем/обновляем чат техподдержки (Support)
  */
 #[AsMessageHandler(priority: 0)]
+#[Autoconfigure(shared: false)]
 final readonly class GetOzonChatListDispatcher
 {
     public function __construct(

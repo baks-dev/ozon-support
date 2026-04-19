@@ -40,6 +40,7 @@ use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -48,6 +49,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * next @see ReplyOzonReviewDispatcher
  */
 #[AsMessageHandler(priority: 0)]
+#[Autoconfigure(shared: false)]
 final readonly class AutoReplyOzonReviewDispatcher
 {
     public function __construct(

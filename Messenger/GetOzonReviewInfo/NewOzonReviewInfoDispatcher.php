@@ -47,6 +47,7 @@ use BaksDev\Support\UseCase\Admin\New\Token\SupportTokenDTO;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
 use DateInterval;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -55,6 +56,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * next @see AutoReplyYandexReviewDispatcher
  */
 #[AsMessageHandler(priority: 0)]
+#[Autoconfigure(shared: false)]
 final readonly class NewOzonReviewInfoDispatcher
 {
     public function __construct(

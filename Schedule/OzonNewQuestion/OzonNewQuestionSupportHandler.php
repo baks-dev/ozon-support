@@ -31,6 +31,7 @@ use BaksDev\Ozon\Repository\AllProfileToken\AllProfileOzonTokenInterface;
 use BaksDev\Ozon\Support\Messenger\Schedules\GetOzonQuestion\OzonQuestionMessage;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -38,6 +39,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * Инициируем получение вопросов из чатов Ozon
  */
 #[AsMessageHandler(priority: 0)]
+#[Autoconfigure(shared: false)]
 final readonly class OzonNewQuestionSupportHandler
 {
     public function __construct(

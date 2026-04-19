@@ -51,6 +51,7 @@ use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Twig\Environment;
@@ -59,6 +60,7 @@ use Twig\Environment;
  * Создаем чат с клиентом Ozon с уточнением характеристик
  */
 #[AsMessageHandler(priority: -99)]
+#[Autoconfigure(shared: false)]
 final readonly class CreateOzonChatMessageByNewOrderDispatcher
 {
     public function __construct(

@@ -46,6 +46,7 @@ use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use DateInterval;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -53,6 +54,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * Получает новые сообщения Ozon
  */
 #[AsMessageHandler(priority: 0)]
+#[Autoconfigure(shared: false)]
 final class GetOzonCustomerMessageChatDispatcher
 {
     private bool $isAddMessage = false;

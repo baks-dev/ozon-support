@@ -32,6 +32,7 @@ use BaksDev\Ozon\Repository\OzonTokensByProfile\OzonTokensByProfileInterface;
 use BaksDev\Ozon\Support\Api\ReviewList\Get\OzonReviewListRequest;
 use BaksDev\Ozon\Support\Messenger\GetOzonReviewInfo\GetOzonReviewInfoMessage;
 use BaksDev\Support\Repository\ExistTicket\ExistSupportTicketInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
@@ -42,6 +43,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * next @see NewOzonReviewInfoDispatcher
  */
 #[AsMessageHandler(priority: 0)]
+#[Autoconfigure(shared: false)]
 final readonly class OzonReviewListDispatcher
 {
 
