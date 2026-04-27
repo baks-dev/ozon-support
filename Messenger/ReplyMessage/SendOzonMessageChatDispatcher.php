@@ -138,7 +138,7 @@ final readonly class SendOzonMessageChatDispatcher
         $lastMessage = $SupportDTO->getMessages()->last();
 
         // проверяем наличие внешнего ID - для наших ответов его быть не должно
-        if(null !== $lastMessage->getExternal())
+        if($lastMessage && null !== $lastMessage->getExternal())
         {
             return;
         }
