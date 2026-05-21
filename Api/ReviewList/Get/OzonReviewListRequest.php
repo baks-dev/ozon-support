@@ -132,7 +132,11 @@ final class OzonReviewListRequest extends Ozon
 
                     $this->logger->critical(
                         message: sprintf('ozon-support: Код ответа: %s. Ошибка получения списка отзывов от Ozon Seller API', $response->getStatusCode()),
-                        context: [self::class.':'.__LINE__, $result,],
+                        context: [
+                            self::class.':'.__LINE__,
+                            $result,
+                            $this->getIdentifier(),
+                        ],
                     );
 
                     return false;
@@ -147,6 +151,7 @@ final class OzonReviewListRequest extends Ozon
                         context: [
                             self::class.':'.__LINE__,
                             $result,
+                            $this->getIdentifier(),
                         ]);
 
                     return false;

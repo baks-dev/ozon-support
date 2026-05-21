@@ -133,12 +133,16 @@ final readonly class SendOzonMessageChatDispatcher
             return;
         }
 
-
         /** @var SupportMessageDTO $lastMessage */
         $lastMessage = $SupportDTO->getMessages()->last();
 
+        if(true === empty($lastMessage))
+        {
+            return;
+        }
+
         // проверяем наличие внешнего ID - для наших ответов его быть не должно
-        if($lastMessage && null !== $lastMessage->getExternal())
+        if(false === empty($lastMessage->getExternal()))
         {
             return;
         }

@@ -99,8 +99,12 @@ final class MarkReadingOzonMessageChatRequest extends Ozon
             $error = $response->toArray(false);
 
             $this->logger->critical(
-                'ozon-support: Ошибка отметки выбранного сообщения прочитанными от Ozon Seller API)',
-                [self::class.':'.__LINE__, $error]);
+                message: 'ozon-support: Ошибка отметки выбранного сообщения прочитанными от Ozon Seller API)',
+                context: [
+                    self::class.':'.__LINE__,
+                    $error,
+                    $this->getIdentifier(),
+                ]);
 
             return false;
         }

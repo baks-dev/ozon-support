@@ -62,6 +62,8 @@ final class GetOzonReviewInfoRequest extends Ozon
                 context: [
                     self::class.':'.__LINE__,
                     $result,
+                    $reviewId,
+                    $this->getIdentifier(),
                 ]);
 
             return false;
@@ -76,6 +78,8 @@ final class GetOzonReviewInfoRequest extends Ozon
                 context: [
                     self::class.':'.__LINE__,
                     $result,
+                    $reviewId,
+                    $this->getIdentifier(),
                 ]);
 
             return false;

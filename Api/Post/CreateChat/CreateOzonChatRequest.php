@@ -83,8 +83,11 @@ final class CreateOzonChatRequest extends Ozon
         if($response->getStatusCode() !== 200)
         {
             $this->logger->critical(
-                sprintf('%s: Ошибка создания чата с пользователем по отправлению', $this->order),
-                [self::class.':'.__LINE__, $content],
+                message: sprintf('%s: Ошибка создания чата с пользователем по отправлению', $this->order),
+                context: [self::class.':'.__LINE__,
+                    $content,
+                    $this->getIdentifier(),
+                ],
             );
 
             return false;

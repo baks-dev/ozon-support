@@ -81,11 +81,13 @@ final class PostOzonQuestionsViewedRequest extends Ozon
 
         if($response->getStatusCode() !== 200)
         {
-            $this->logger->critical('ozon-support: Ошибка обновления статусов вопросов',
-                [
+            $this->logger->critical(
+                message: 'ozon-support: Ошибка обновления статусов вопросов',
+                context: [
                     self::class.':'.__LINE__,
                     $response->toArray(false),
                     $json,
+                    $this->getIdentifier(),
                 ]);
         }
 

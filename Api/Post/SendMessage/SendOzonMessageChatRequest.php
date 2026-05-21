@@ -99,8 +99,13 @@ final class SendOzonMessageChatRequest extends Ozon
             if(str_contains(haystack: $error['message'], needle: 'disabled'))
             {
                 $this->logger->critical(
-                    'ozon-support: Чат отключен',
-                    [self::class.':'.__LINE__, $error, $json],
+                    message: 'ozon-support: Чат отключен',
+                    context: [
+                        self::class.':'.__LINE__,
+                        $error,
+                        $json,
+                        $this->getIdentifier(),
+                    ],
                 );
 
                 return true;
@@ -109,16 +114,26 @@ final class SendOzonMessageChatRequest extends Ozon
             if(str_contains(haystack: $error['message'], needle: 'not permitted'))
             {
                 $this->logger->critical(
-                    'ozon-support: Период доступа к чату истек',
-                    [self::class.':'.__LINE__, $error, $json],
+                    message: 'ozon-support: Период доступа к чату истек',
+                    context: [
+                        self::class.':'.__LINE__,
+                        $error,
+                        $json,
+                        $this->getIdentifier(),
+                    ],
                 );
 
                 return true;
             }
 
             $this->logger->critical(
-                'ozon-support: Ошибка отправки сообщения в существующий чат по его идентификатору',
-                [self::class.':'.__LINE__, $error, $json],
+                message: 'ozon-support: Ошибка отправки сообщения в существующий чат по его идентификатору',
+                context: [
+                    self::class.':'.__LINE__,
+                    $error,
+                    $json,
+                    $this->getIdentifier(),
+                ],
             );
 
             return false;

@@ -92,10 +92,11 @@ final class GetOzonQuestionsRequest extends Ozon
                 }
 
                 $this->logger->critical(
-                    sprintf('ozon-support: Ошибка получения списка вопросов'),
-                    [
+                    message: sprintf('ozon-support: Ошибка получения списка вопросов'),
+                    context: [
                         self::class.':'.__LINE__,
                         $content,
+                        $this->getIdentifier(),
                     ]);
 
                 return false;

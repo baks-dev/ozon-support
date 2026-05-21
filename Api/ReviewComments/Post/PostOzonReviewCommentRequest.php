@@ -132,6 +132,7 @@ final class PostOzonReviewCommentRequest extends Ozon
                 context: [
                     self::class.':'.__LINE__,
                     $result,
+                    $this->getIdentifier(),
                 ]);
 
             return false;
@@ -146,6 +147,7 @@ final class PostOzonReviewCommentRequest extends Ozon
                 context: [
                     self::class.':'.__LINE__,
                     $result,
+                    $this->getIdentifier(),
                 ]);
 
             return false;

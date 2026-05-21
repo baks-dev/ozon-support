@@ -144,11 +144,13 @@ final class GetOzonChatMessagesRequest extends Ozon
         if($response->getStatusCode() !== 200)
         {
             $this->logger->critical(
-                sprintf('ozon-support: Ошибка получения истории чата от Ozon Seller API'),
-                [
+                message: sprintf('ozon-support: Ошибка получения истории чата от Ozon Seller API'),
+                context: [
                     self::class.':'.__LINE__,
                     $json,
                     $content,
+                    $this->getIdentifier(),
+
                 ]);
 
             return false;

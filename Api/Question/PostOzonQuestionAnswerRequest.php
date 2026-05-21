@@ -117,11 +117,13 @@ final class PostOzonQuestionAnswerRequest extends Ozon
         {
             $result = $response->toArray(false);
 
-            $this->logger->critical('ozon-support: Ошибка при ответе на вопрос',
-                [
+            $this->logger->critical(
+                message: 'ozon-support: Ошибка при ответе на вопрос',
+                context: [
                     self::class.':'.__LINE__,
                     $result,
                     $json,
+                    $this->getIdentifier(),
                 ]);
 
             /** Необходима Премиум-подписка */
