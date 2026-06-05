@@ -157,11 +157,7 @@ final readonly class OzonReviewHandler
                     stamps: [new MessageDelay(sprintf('%s seconds', 1))],
                     transport: 'ozon-support-low',
                 );
-
             }
-
         }
-
     }
-
 }

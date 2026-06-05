@@ -167,6 +167,10 @@ final readonly class ReplyOzonReviewDispatcher
                     stamps: [new MessageDelay('1 minute')],
                     transport: 'ozon-support-low',
                 );
+
+            return;
         }
+
+        $Deduplicator->save();
     }
 }

@@ -165,6 +165,10 @@ final readonly class AutoReplyOzonReviewDispatcher
                 'ozon-support: Ошибка при отправке автоматического ответа на отзыв',
                 [$Support, self::class.':'.__LINE__],
             );
+
+            return;
         }
+
+        $Deduplicator->save();
     }
 }
