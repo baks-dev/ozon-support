@@ -63,7 +63,7 @@ final class PostOzonQuestionsViewedRequest extends Ozon
 
         if(empty($this->question))
         {
-            return false;
+            return true;
         }
 
         $json = [

@@ -62,8 +62,7 @@ final class GetOzonQuestionsRequest extends Ozon
                 'filter' => [
 
                     "date_from" => new DateTimeImmutable()
-                        ->sub(DateInterval::createFromDateString('1 day'))
-                        ->modify('-1 day')
+                        ->sub(DateInterval::createFromDateString('1 week'))
                         ->format('Y-m-d\TH:i:s\Z'),
 
                     "date_to" => (new DateTimeImmutable())->format('Y-m-d\TH:i:s\Z'),
